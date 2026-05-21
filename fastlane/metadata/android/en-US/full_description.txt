@@ -1,0 +1,19 @@
+Send and receive DigiByte, the first Proof-of-Stake cryptocurrency, on your phone.
+
+Keep your wallet seed protected. 
+This app comes with absolutely no warranty. 
+Use at own risk.
+
+Features:
+- Based on electrum protocol.
+- Send and receive digibyte.
+- Ready to transact after installation (no waiting).
+- DigiByte and DigiByte testnet wallets.
+- Address book management.
+- Import paper wallets.
+- Import & export private keys (WIF).
+- Server management.
+- Multi-language support.
+- Background notifications.
+
+Known limitations can be found in the Github repository.

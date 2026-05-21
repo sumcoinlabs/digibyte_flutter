@@ -113,3 +113,6 @@ android/app/build/
 .dart_tool/
 __MACOSX/
 .DS_Store
+
+# Private Android manifest
+android/app/src/main/AndroidManifest.xml

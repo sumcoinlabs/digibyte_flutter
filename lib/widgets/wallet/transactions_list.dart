@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../models/available_coins.dart';
 import '../../models/hive/coin_wallet.dart';
 import '../../providers/connection_provider.dart';
+import '../../providers/app_settings_provider.dart';
 import '../../providers/wallet_provider.dart';
 import '/../tools/app_localizations.dart';
 import '/../models/hive/wallet_transaction.dart';
@@ -383,6 +384,22 @@ class _TransactionListState extends State<TransactionList> {
                   ),
                 ),
               ),
+
+        Positioned(
+          top: 80,
+          left: 80,
+          right: 80,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              print('BALANCE_PRIVACY_TOGGLE_TAPPED');
+              context.read<AppSettingsProvider>().toggleHideWalletBalances();
+            },
+            child: const SizedBox(
+              height: 70,
+            ),
+          ),
+        ),
       ],
     ); // End of the return Stack
   } // Missing this closing brace for the build method

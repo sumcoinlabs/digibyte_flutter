@@ -24,6 +24,9 @@ class AppOptionsStore extends HiveObject {
   @HiveField(4)
   DateTime? _latestTickerUpdate;
 
+  @HiveField(12, defaultValue: false)
+  bool _hideWalletBalances = false;
+
   @HiveField(5)
   Map<String, dynamic>? _exchangeRates;
 
@@ -89,6 +92,15 @@ class AppOptionsStore extends HiveObject {
 
   set latestTickerUpdate(DateTime newTime) {
     _latestTickerUpdate = newTime;
+    save();
+  }
+
+  bool get hideWalletBalances {
+    return _hideWalletBalances;
+  }
+
+  set hideWalletBalances(bool shouldHide) {
+    _hideWalletBalances = shouldHide;
     save();
   }
 

@@ -21,7 +21,6 @@ class WalletBalanceHeader extends StatelessWidget {
     super.key,
   });
 
-  /// Truncates [value] to [decimals] decimal places without rounding.
   String truncateDouble(double value, int decimals) {
     final mod = pow(10, decimals).toDouble();
     final truncated = (value * mod).floor() / mod;
@@ -31,6 +30,47 @@ class WalletBalanceHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<AppSettingsProvider>();
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    final isCompact = screenWidth < 400;
+    final isVeryCompact = screenWidth < 370;
+
+    final topGap = isVeryCompact
+        ? 8.0
+        : isCompact
+            ? 10.0
+            : 12.0;
+    final connectionGap = isVeryCompact
+        ? 5.0
+        : isCompact
+            ? 6.0
+            : 8.0;
+    final balanceFont = isVeryCompact
+        ? 21.0
+        : isCompact
+            ? 23.0
+            : 25.0;
+    final fiatFont = isVeryCompact
+        ? 13.0
+        : isCompact
+            ? 14.0
+            : 16.0;
+    final timestampFont = isVeryCompact
+        ? 11.0
+        : isCompact
+            ? 12.0
+            : 13.0;
+    final rateFont = isVeryCompact
+        ? 13.0
+        : isCompact
+            ? 14.0
+            : 16.0;
+    final bottomGap = isVeryCompact
+        ? 36.0
+        : isCompact
+            ? 40.0
+            : 44.0;
+
     final decimalProduct = AvailableCoins.getDecimalProduct(
       identifier: _wallet.name,
     );
@@ -51,10 +91,9 @@ class WalletBalanceHeader extends StatelessWidget {
       settings.exchangeRates,
     );
 
-    final lastUpdate = settings.latestTickerUpdate;
     final formattedTime = DateFormat(
       'MM/dd/yy, h:mm a',
-    ).format(lastUpdate.toLocal());
+    ).format(settings.latestTickerUpdate.toLocal());
 
     final hideWalletBalances = settings.hideWalletBalances;
 
@@ -66,108 +105,119 @@ class WalletBalanceHeader extends StatelessWidget {
         ? '•••• ${settings.selectedCurrency}'
         : '${NumberFormat("#,##0.00").format(fiatBalance)} ${settings.selectedCurrency}';
 
-    return Column(
-      children: [
-        const SizedBox(height: 28),
-        WalletHomeConnection(_connectionState),
-        const SizedBox(height: 18),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: isCompact ? 14 : 18),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(height: topGap),
+          WalletHomeConnection(_connectionState),
+          SizedBox(height: connectionGap),
 
-        // Main balance row. The actual tap target is handled above this
-        // widget in TransactionList because that screen uses a Stack layout.
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              coinBalanceText,
-              style: TextStyle(
-                fontSize: 25,
-                color: Colors.grey[100],
-                letterSpacing: 1.0,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              _wallet.letterCode,
-              style: TextStyle(
-                fontSize: 25,
-                color: Colors.grey[100],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Icon(
-              hideWalletBalances ? Icons.visibility_off : Icons.visibility,
-              size: 23,
-              color: Colors.grey[200],
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 8),
-
-        if (settings.selectedCurrency.isNotEmpty &&
-            _wallet.letterCode != 'tDGB')
-          WalletBalancePrice(
-            valueInFiat: Text(
-              fiatBalanceText,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[300],
-                letterSpacing: 1.1,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            fiatCoinValue: Text(
-              '1 ${_wallet.letterCode} = ${NumberFormat("#,##0.000000").format(fiatRate)} ${settings.selectedCurrency}',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[300],
-                letterSpacing: 1.09,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-
-        Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: Text(
-            '@ $formattedTime',
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey[300],
-              letterSpacing: 1.0,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ),
-
-        if (_wallet.unconfirmedBalance > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
+          // Balance row. FittedBox prevents long balances from overflowing
+          // or pushing the eye icon out of alignment on smaller devices.
+          FittedBox(
+            fit: BoxFit.scaleDown,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.query_builder,
-                  size: 14,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(width: 4),
                 Text(
-                  '${_wallet.unconfirmedBalance / decimalProduct} ${_wallet.letterCode}',
+                  coinBalanceText,
                   style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[400],
-                    fontWeight: FontWeight.w400,
+                    fontSize: balanceFont,
+                    color: Colors.grey[100],
+                    letterSpacing: 0.8,
+                    fontWeight: FontWeight.bold,
                   ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _wallet.letterCode,
+                  style: TextStyle(
+                    fontSize: balanceFont,
+                    color: Colors.grey[100],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 9),
+                Icon(
+                  hideWalletBalances ? Icons.visibility_off : Icons.visibility,
+                  size: isCompact ? 21 : 23,
+                  color: Colors.grey[200],
                 ),
               ],
             ),
           ),
 
-        const SizedBox(height: 16),
-      ],
+          SizedBox(height: isVeryCompact ? 3 : 5),
+
+          if (settings.selectedCurrency.isNotEmpty &&
+              _wallet.letterCode != 'tDGB')
+            WalletBalancePrice(
+              valueInFiat: Text(
+                fiatBalanceText,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: fiatFont,
+                  color: Colors.grey[300],
+                  letterSpacing: 0.8,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              fiatCoinValue: Text(
+                '1 ${_wallet.letterCode} = ${NumberFormat("#,##0.000000").format(fiatRate)} ${settings.selectedCurrency}',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: rateFont,
+                  color: Colors.grey[300],
+                  letterSpacing: 0.7,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+
+          Padding(
+            padding: EdgeInsets.only(top: isVeryCompact ? 3 : 5),
+            child: Text(
+              '@ $formattedTime',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: timestampFont,
+                color: Colors.grey[300],
+                letterSpacing: 0.6,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+
+          if (_wallet.unconfirmedBalance > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.query_builder,
+                    size: 13,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${_wallet.unconfirmedBalance / decimalProduct} ${_wallet.letterCode}',
+                    style: TextStyle(
+                      fontSize: isCompact ? 12 : 13,
+                      color: Colors.grey[400],
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          SizedBox(height: bottomGap),
+        ],
+      ),
     );
   }
 }

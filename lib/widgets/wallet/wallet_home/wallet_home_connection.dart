@@ -10,29 +10,46 @@ class WalletHomeConnection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 430;
+    final isVeryCompact = screenWidth < 380;
+
+    final iconSize = isVeryCompact
+        ? 16.0
+        : isCompact
+            ? 17.0
+            : 18.0;
+    final textSize = isVeryCompact
+        ? 17.0
+        : isCompact
+            ? 18.0
+            : 19.0;
+    final spacing = isVeryCompact ? 7.0 : 8.0;
+    final letterSpacing = isVeryCompact ? 1.6 : 1.9;
+
     Widget widget;
     if (_connectionState == BackendConnectionState.connected) {
       widget = Text(
         AppLocalizations.instance.translate('wallet_connected'),
         style: TextStyle(
-          color: Theme.of(context).colorScheme.onPrimary,
-          letterSpacing: 1.6,
-          fontSize: 20,
-          fontWeight: FontWeight.w500,
+          color: Colors.grey[100],
+          letterSpacing: letterSpacing,
+          fontSize: textSize,
+          fontWeight: FontWeight.w600,
         ),
       );
     } else if (_connectionState == BackendConnectionState.offline) {
       widget = Text(
         AppLocalizations.instance.translate('wallet_offline'),
         style: TextStyle(
-          color: Theme.of(context).colorScheme.onPrimary,
-          fontSize: 20,
-          letterSpacing: 1.6,
-          fontWeight: FontWeight.w500,
+          color: Colors.grey[100],
+          letterSpacing: letterSpacing,
+          fontSize: textSize,
+          fontWeight: FontWeight.w600,
         ),
       );
     } else {
-      widget = const SizedBox(width: 88, child: LoadingIndicator());
+      widget = const SizedBox(width: 70, child: LoadingIndicator());
     }
 
     return Row(
@@ -40,11 +57,9 @@ class WalletHomeConnection extends StatelessWidget {
       children: [
         Image.asset(
           'assets/icon/dgb-icon-white-256.png',
-          width: 24,
+          width: iconSize,
         ),
-        const SizedBox(
-          width: 12,
-        ),
+        SizedBox(width: spacing),
         widget,
       ],
     );

@@ -113,9 +113,10 @@ class WalletProvider with ChangeNotifier {
       final existingWallet = box.values.firstWhereOrNull(
         (w) => w.letterCode == letterCode && w.watchOnly == false,
       );
-      nOfWalletOfLetterCode = existingWallet?.walletIndex ?? box.values
-          .where((w) => w.letterCode == letterCode && w.watchOnly == false)
-          .length;
+      nOfWalletOfLetterCode = existingWallet?.walletIndex ??
+          box.values
+              .where((w) => w.letterCode == letterCode && w.watchOnly == false)
+              .length;
     } else {
       nOfWalletOfLetterCode = box.values
           .where((w) => w.letterCode == letterCode && w.watchOnly == false)
@@ -139,7 +140,6 @@ class WalletProvider with ChangeNotifier {
     );
     notifyListeners();
   }
-
 
   Future<BuildResult> buildTransaction({
     required String identifier,
@@ -1281,6 +1281,29 @@ class WalletProvider with ChangeNotifier {
     }
 
     openWallet.save();
+    notifyListeners();
+  }
+
+  Future<void> advanceTransactionConfirmations({
+    required String identifier,
+    required int blockDelta,
+  }) async {
+    if (blockDelta <= 0) {
+      return;
+    }
+
+    final openWallet = getSpecificCoinWallet(identifier);
+
+    for (final tx in openWallet.transactions) {
+      // -1 means rejected.
+      // 0 means unconfirmed and still needs an Electrum refresh.
+      // Confirmed txs can advance locally when a new block arrives.
+      if (tx.confirmations > 0 && tx.timestamp > 0) {
+        tx.newConfirmations = tx.confirmations + blockDelta;
+      }
+    }
+
+    await openWallet.save();
     notifyListeners();
   }
 

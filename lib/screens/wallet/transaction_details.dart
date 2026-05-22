@@ -136,7 +136,9 @@ class TransactionDetails extends StatelessWidget {
                   SelectableText(
                     tx.confirmations == -1
                         ? AppLocalizations.instance.translate('tx_rejected')
-                        : tx.confirmations.toString(),
+                        : tx.confirmations == 0
+                            ? AppLocalizations.instance.translate('unconfirmed')
+                            : '${NumberFormat("#,##0").format(tx.confirmations)} confirmation${tx.confirmations == 1 ? "" : "s"}',
                   ),
                 ],
               ),
@@ -207,20 +209,20 @@ class TransactionDetails extends StatelessWidget {
                       ),
                     )
                   : Center(
-                    child: PeerButton(
-                      action: () => _launchURL(baseUrl + tx.txid + '.htm'),
-                      text: AppLocalizations.instance.translate(
-                      'tx_view_in_explorer',
+                      child: PeerButton(
+                        action: () => _launchURL(baseUrl + tx.txid + '.htm'),
+                        text: AppLocalizations.instance.translate(
+                          'tx_view_in_explorer',
                         ),
                       ),
                     ),
-                    // Add some space
-                    const SizedBox(height: 25),
-                    // Add the banner ad widget here.
-                    BannerAdWidget(),
-                    // Add the native ad widget here.
-                    //const SizedBox(height: 25),
-                    //NativeAdWidget(),
+              // Add some space
+              const SizedBox(height: 25),
+              // Add the banner ad widget here.
+              BannerAdWidget(),
+              // Add the native ad widget here.
+              //const SizedBox(height: 25),
+              //NativeAdWidget(),
             ],
           ),
         ),

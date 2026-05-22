@@ -26,7 +26,7 @@ jobs:
     - run: flutter test -r expanded
 
   e2e-test:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
       matrix:
@@ -48,9 +48,11 @@ jobs:
         with:
           api-level: ${{ matrix.api-level }}
           arch: x86_64
-          script: | 
-           flutter drive --target=test_driver/app.dart --driver=test_driver/key_new.dart
-           flutter drive --target=test_driver/app.dart --driver=test_driver/key_imported.dart
+          script: |
+            flutter doctor -v
+            flutter pub get
+            flutter drive --target=test_driver/app.dart --driver=test_driver/key_new.dart
+            flutter drive --target=test_driver/app.dart --driver=test_driver/key_imported.dart
       # - name: Upload screenshots
       #   if: failure()
       #   uses: actions/upload-artifact@v3

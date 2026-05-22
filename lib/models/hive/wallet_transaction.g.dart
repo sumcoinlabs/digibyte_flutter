@@ -29,13 +29,18 @@ class WalletTransactionAdapter extends TypeAdapter<WalletTransaction> {
       broadcastHex: fields[8] as String,
       confirmations: fields[6] as int,
       opReturn: fields[9] == null ? '' : fields[9] as String,
+      startingBalance: fields[11] == null ? 0 : fields[11] as int,
+      endingBalance: fields[12] == null ? 0 : fields[12] as int,
+      fiatRateAtTx: fields[13] == null ? 0.0 : fields[13] as double,
+      fiatCodeAtTx: fields[14] == null ? '' : fields[14] as String,
+      fiatSnapshotTimestamp: fields[15] == null ? 0 : fields[15] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, WalletTransaction obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(16)
       ..writeByte(0)
       ..write(obj.txid)
       ..writeByte(1)
@@ -57,7 +62,17 @@ class WalletTransactionAdapter extends TypeAdapter<WalletTransaction> {
       ..writeByte(9)
       ..write(obj.opReturn)
       ..writeByte(10)
-      ..write(obj.recipients);
+      ..write(obj.recipients)
+      ..writeByte(11)
+      ..write(obj.startingBalance)
+      ..writeByte(12)
+      ..write(obj.endingBalance)
+      ..writeByte(13)
+      ..write(obj.fiatRateAtTx)
+      ..writeByte(14)
+      ..write(obj.fiatCodeAtTx)
+      ..writeByte(15)
+      ..write(obj.fiatSnapshotTimestamp);
   }
 
   @override

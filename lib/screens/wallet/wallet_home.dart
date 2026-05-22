@@ -195,6 +195,7 @@ class _WalletHomeState extends State<WalletHomeScreen>
       _wallet.name,
       requestedFromWalletHome: true,
     );
+    await _snapshotRecentTransactionPrices();
 
     if (_appSettings.authenticationOptions!['walletHome']!) {
       if (mounted) {
@@ -313,6 +314,7 @@ class _WalletHomeState extends State<WalletHomeScreen>
         if (_wallet.unconfirmedBalance > 0) {
           await _walletProvider.updateWalletBalance(_wallet.name);
         }
+        await _snapshotRecentTransactionPrices();
       }
     }
 
@@ -341,6 +343,29 @@ class _WalletHomeState extends State<WalletHomeScreen>
       );
       _connectionProvider.requestTxUpdate(element.txid);
     }
+  }
+
+  Future<void> _snapshotRecentTransactionPrices() async {
+    if (_appSettings.selectedCurrency.isEmpty ||
+        _appSettings.exchangeRates.isEmpty) {
+      return;
+    }
+
+    final fiatRate = PriceTicker.renderPrice(
+      1,
+      _appSettings.selectedCurrency,
+      _wallet.letterCode,
+      _appSettings.exchangeRates,
+    );
+
+    await _walletProvider.snapshotRecentTransactionPrices(
+      identifier: _wallet.name,
+      fiatRateAtTx: fiatRate,
+      fiatCodeAtTx: _appSettings.selectedCurrency,
+    );
+
+    _walletTransactions =
+        await _walletProvider.getWalletTransactions(_wallet.name);
   }
 
   void _rebroadCastUnsendTx() {

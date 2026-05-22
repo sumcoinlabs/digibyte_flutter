@@ -78,12 +78,15 @@ class _TransactionListState extends State<TransactionList> {
             selectedStepSize: 5,
             unselectedStepSize: 5,
             totalSteps: 6,
-            currentStep: tx.confirmations,
+            currentStep: tx.confirmations.clamp(0, 6).toInt(),
             width: 20,
             height: 20,
-            selectedColor: Theme.of(context).primaryColor,
-            unselectedColor:
-                Theme.of(context).unselectedWidgetColor.withOpacity(0.5),
+            selectedColor: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF2057A8)
+                : Theme.of(context).primaryColor,
+            unselectedColor: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Theme.of(context).unselectedWidgetColor.withOpacity(0.5),
             stepSize: 4,
             roundedCap: (_, __) => true,
           );
@@ -117,7 +120,9 @@ class _TransactionListState extends State<TransactionList> {
 
         // Main content
         widget.walletTransactions
-                .where((element) => element.timestamp != -1) // Filter out "phantom" transactions
+                .where((element) =>
+                    element.timestamp !=
+                    -1) // Filter out "phantom" transactions
                 .isEmpty
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -181,11 +186,13 @@ class _TransactionListState extends State<TransactionList> {
                                   },
                                 ),
                                 leading: Column(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     AnimatedContainer(
-                                      duration: const Duration(milliseconds: 500),
+                                      duration:
+                                          const Duration(milliseconds: 500),
                                       child: renderConfirmationIndicator(
                                         filteredTx[i - 1],
                                       ),
@@ -193,15 +200,18 @@ class _TransactionListState extends State<TransactionList> {
                                     Text(
                                       DateFormat('d. MMM').format(
                                         filteredTx[i - 1].timestamp != 0
-                                            ? DateTime.fromMillisecondsSinceEpoch(
-                                                filteredTx[i - 1].timestamp * 1000,
+                                            ? DateTime
+                                                .fromMillisecondsSinceEpoch(
+                                                filteredTx[i - 1].timestamp *
+                                                    1000,
                                               )
                                             : DateTime.now(),
                                       ),
                                       style: TextStyle(
-                                        fontWeight: filteredTx[i - 1].timestamp != 0
-                                            ? FontWeight.w500
-                                            : FontWeight.w300,
+                                        fontWeight:
+                                            filteredTx[i - 1].timestamp != 0
+                                                ? FontWeight.w500
+                                                : FontWeight.w300,
                                       ),
                                       textScaler: const TextScaler.linear(0.8),
                                     ),
@@ -213,12 +223,13 @@ class _TransactionListState extends State<TransactionList> {
                                     overflow: TextOverflow.ellipsis,
                                     textScaler: const TextScaler.linear(0.9),
                                     style: TextStyle(
-                                      color: filteredTx[i - 1].direction == 'out'
-                                          ? Colors.red
-                                          : Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? const Color(0xFF00FF00)
-                                              : Colors.green,
+                                      color:
+                                          filteredTx[i - 1].direction == 'out'
+                                              ? Colors.red
+                                              : Theme.of(context).brightness ==
+                                                      Brightness.dark
+                                                  ? const Color(0xFF38C172)
+                                                  : const Color(0xFF38C172),
                                     ),
                                   ),
                                 ),
@@ -232,7 +243,7 @@ class _TransactionListState extends State<TransactionList> {
                                     style: TextStyle(
                                       color: Theme.of(context).brightness ==
                                               Brightness.dark
-                                          ? Colors.black
+                                          ? Colors.white
                                           : Colors.black,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -253,11 +264,12 @@ class _TransactionListState extends State<TransactionList> {
                                             filteredTx[i - 1].timestamp != 0
                                                 ? FontWeight.bold
                                                 : FontWeight.w300,
-                                        color: filteredTx[i - 1].direction == 'in'
+                                        color: filteredTx[i - 1].direction ==
+                                                'in'
                                             ? Theme.of(context).brightness ==
                                                     Brightness.dark
-                                                ? const Color(0xFF00FF00)
-                                                : Colors.green
+                                                ? const Color(0xFF38C172)
+                                                : const Color(0xFF38C172)
                                             : Colors.red,
                                         fontSize: 16,
                                       ),
@@ -281,7 +293,8 @@ class _TransactionListState extends State<TransactionList> {
                               ),
                             ),
                           );
-                        } else if (i == 0 && widget.walletTransactions.isNotEmpty) {
+                        } else if (i == 0 &&
+                            widget.walletTransactions.isNotEmpty) {
                           return Column(
                             children: [
                               SizedBox(
@@ -335,8 +348,7 @@ class _TransactionListState extends State<TransactionList> {
                                           ),
                                         ),
                                         selected: _filterChoice == 'all',
-                                        onSelected: (_) =>
-                                            _handleSelect('all'),
+                                        onSelected: (_) => _handleSelect('all'),
                                       ),
                                       ChoiceChip(
                                         backgroundColor: Theme.of(context)

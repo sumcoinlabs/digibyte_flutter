@@ -20,8 +20,8 @@ class PeerButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        foregroundColor: Theme.of(context).colorScheme.secondary,
-        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         fixedSize: Size(
           MediaQuery.of(context).size.width > 768
               ? MediaQuery.of(context).size.width / 4
@@ -39,7 +39,9 @@ class PeerButton extends StatelessWidget {
         textAlign: TextAlign.center,
         style: TextStyle(
           letterSpacing: 1.4,
-          color: active ? LightColors.white : LightColors.grey,
+          color: active
+              ? Theme.of(context).colorScheme.onPrimary
+              : Theme.of(context).disabledColor,
         ),
       ),
     );
@@ -55,7 +57,7 @@ class PeerButtonBorder extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        foregroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.primary,
         backgroundColor: Theme.of(context).colorScheme.surface,
         fixedSize: Size(
           MediaQuery.of(context).size.width > 768
@@ -101,9 +103,10 @@ class PeerButtonSetup extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        foregroundColor: Theme.of(context).primaryColor,
-        backgroundColor:
-            active ? Theme.of(context).colorScheme.surface : Colors.grey,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        backgroundColor: active
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).disabledColor,
         fixedSize: Size(
           MediaQuery.of(context).size.width > 768
               ? MediaQuery.of(context).size.width / 4
@@ -123,7 +126,7 @@ class PeerButtonSetup extends StatelessWidget {
             letterSpacing: 1.2,
             fontWeight: FontWeight.bold,
             fontSize: 18,
-            color: Theme.of(context).colorScheme.primaryContainer,
+            color: Theme.of(context).colorScheme.onPrimary,
           ),
         ),
       ),
@@ -147,8 +150,8 @@ class PeerButtonSetupLoading extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        foregroundColor: Theme.of(context).primaryColor,
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         fixedSize: Size(
           MediaQuery.of(context).size.width > 768
               ? MediaQuery.of(context).size.width / 4
@@ -177,7 +180,7 @@ class PeerButtonSetupLoading extends StatelessWidget {
                   letterSpacing: 1.2,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: Theme.of(context).colorScheme.primaryContainer,
+                  color: Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
       ),

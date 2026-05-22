@@ -197,16 +197,14 @@ class _ReceiveTabState extends State<ReceiveTab> {
           titleTextStyle: TextStyle(
             color: defaultTextColor,
             fontSize: Theme.of(context).textTheme.titleLarge?.fontSize ?? 20,
-            fontWeight:
-                Theme.of(context).textTheme.titleLarge?.fontWeight ??
-                    FontWeight.w500,
+            fontWeight: Theme.of(context).textTheme.titleLarge?.fontWeight ??
+                FontWeight.w500,
           ),
           contentTextStyle: TextStyle(
             color: defaultTextColor,
             fontSize: Theme.of(context).textTheme.bodyMedium?.fontSize ?? 16,
-            fontWeight:
-                Theme.of(context).textTheme.bodyMedium?.fontWeight ??
-                    FontWeight.normal,
+            fontWeight: Theme.of(context).textTheme.bodyMedium?.fontWeight ??
+                FontWeight.normal,
           ),
           title: Text(
             AppLocalizations.instance.translate('buy_digibyte_dialog_title'),
@@ -370,8 +368,11 @@ class _ReceiveTabState extends State<ReceiveTab> {
                       const SizedBox(height: 20),
                       Container(
                         decoration: BoxDecoration(
-                          color:
-                              Theme.of(context).colorScheme.secondaryContainer,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).disabledColor
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .secondaryContainer,
                           borderRadius: const BorderRadius.all(
                             Radius.circular(4),
                           ),
@@ -384,7 +385,11 @@ class _ReceiveTabState extends State<ReceiveTab> {
                               clipBoardData: widget.unusedAddress,
                               child: SelectableText(
                                 widget.unusedAddress,
-                                style: const TextStyle(fontSize: 16),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
                               ),
                             ),
                           ),
@@ -404,10 +409,12 @@ class _ReceiveTabState extends State<ReceiveTab> {
                             ),
                           );
                         },
-                        icon: const Icon(Icons.copy, size: 18), // Adjust icon size here
+                        icon: const Icon(Icons.copy,
+                            size: 18), // Adjust icon size here
                         label: const Text(
                           'Copy Address',
-                          style: TextStyle(fontSize: 14), // Adjust font size here
+                          style:
+                              TextStyle(fontSize: 14), // Adjust font size here
                         ),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
@@ -440,7 +447,10 @@ class _ReceiveTabState extends State<ReceiveTab> {
                       Text(
                         AppLocalizations.instance
                             .translate('receive_requested_amount'),
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Row(
@@ -473,9 +483,10 @@ class _ReceiveTabState extends State<ReceiveTab> {
                                 border: InputBorder.none,
                                 hintText: 'Coin Amount',
                               ),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                               validator: (value) {
                                 if (value!.isEmpty) {
@@ -489,9 +500,10 @@ class _ReceiveTabState extends State<ReceiveTab> {
                           const SizedBox(width: 8),
                           Text(
                             widget.wallet.letterCode,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -499,9 +511,9 @@ class _ReceiveTabState extends State<ReceiveTab> {
                       const SizedBox(height: 10),
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.attach_money,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -525,21 +537,23 @@ class _ReceiveTabState extends State<ReceiveTab> {
                               ],
                               decoration: InputDecoration(
                                 border: InputBorder.none,
-                              //  prefixText: '\$', // Add dollar sign
+                                //  prefixText: '\$', // Add dollar sign
                                 hintText: 'USD Amount',
                               ),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Text(
+                          Text(
                             'USD',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -558,26 +572,36 @@ class _ReceiveTabState extends State<ReceiveTab> {
                             Icons.bookmark,
                             color: Theme.of(context).primaryColor,
                           ),
-                          labelText: AppLocalizations.instance
-                              .translate('send_label'),
+                          labelText:
+                              AppLocalizations.instance.translate('send_label'),
+                          labelStyle: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         maxLength: 32,
                       ),
                       const SizedBox(height: 30),
                       const SizedBox(height: 8),
                       PeerButton(
-                        text: AppLocalizations.instance.translate('receive_share'),
+                        text: AppLocalizations.instance
+                            .translate('receive_share'),
                         action: () async {
                           if (labelController.text.isNotEmpty) {
-                            context.read<WalletProvider>().updateOrCreateAddressLabel(
+                            context
+                                .read<WalletProvider>()
+                                .updateOrCreateAddressLabel(
                                   identifier: widget.wallet.name,
                                   address: widget.unusedAddress,
                                   label: labelController.text,
-                            );
+                                );
                           }
                           await ShareWrapper.share(
                             context: context,
-                            message: widget.unusedAddress, // Share only the address
+                            message:
+                                widget.unusedAddress, // Share only the address
                           );
                         },
                       ),
@@ -588,7 +612,10 @@ class _ReceiveTabState extends State<ReceiveTab> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Theme.of(context).colorScheme.secondary,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.82),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -598,7 +625,10 @@ class _ReceiveTabState extends State<ReceiveTab> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Theme.of(context).colorScheme.secondary,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.82),
                         ),
                       ),
                     ],
@@ -686,8 +716,8 @@ class WalletHomeQr extends StatelessWidget {
                         message: address,
                         popNavigator: true,
                       ),
-                      text: AppLocalizations.instance
-                          .translate('receive_share'),
+                      text:
+                          AppLocalizations.instance.translate('receive_share'),
                     ),
                 ],
               ),

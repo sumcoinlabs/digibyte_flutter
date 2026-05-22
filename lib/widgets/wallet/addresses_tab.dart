@@ -1,4 +1,3 @@
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -695,13 +694,13 @@ class _AddressTabState extends State<AddressTab> {
             ),
             trailing: Icon(
               _optionsExpanded ? Icons.close : Icons.filter_alt,
-              color: Theme.of(context).colorScheme.tertiary,
+              color: Theme.of(context).colorScheme.onPrimary,
             ),
             title: Text(
               AppLocalizations.instance
                   .translate('addressbook_bottom_bar_your_addresses'),
               style: TextStyle(
-                color: Theme.of(context).colorScheme.tertiary,
+                color: Theme.of(context).colorScheme.onPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
               ),
@@ -714,17 +713,19 @@ class _AddressTabState extends State<AddressTab> {
                 children: [
                   ChoiceChip(
                     backgroundColor: Theme.of(context).colorScheme.surface,
-                    selectedColor: Theme.of(context).shadowColor,
+                    selectedColor: Theme.of(context).colorScheme.primary,
                     visualDensity: const VisualDensity(
                       horizontal: 0.0,
                       vertical: -4,
                     ),
-                    label: AutoSizeText(
+                    label: Text(
                       AppLocalizations.instance
                           .translate('addressbook_hide_change'),
-                      minFontSize: 10,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
+                        color: _showChangeAddresses
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     selected: _showChangeAddresses,
@@ -737,17 +738,19 @@ class _AddressTabState extends State<AddressTab> {
                   ),
                   ChoiceChip(
                     backgroundColor: Theme.of(context).colorScheme.surface,
-                    selectedColor: Theme.of(context).shadowColor,
+                    selectedColor: Theme.of(context).colorScheme.primary,
                     visualDensity: const VisualDensity(
                       horizontal: 0.0,
                       vertical: -4,
                     ),
-                    label: AutoSizeText(
+                    label: Text(
                       AppLocalizations.instance
                           .translate('addressbook_hide_unwatched'),
-                      minFontSize: 10,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
+                        color: _showUnwatched
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     selected: _showUnwatched,
@@ -762,21 +765,23 @@ class _AddressTabState extends State<AddressTab> {
                     padding: const EdgeInsets.all(kIsWeb ? 8.0 : 0),
                     child: ChoiceChip(
                       backgroundColor: Theme.of(context).colorScheme.surface,
-                      selectedColor: Theme.of(context).shadowColor,
+                      selectedColor: Theme.of(context).colorScheme.primary,
                       visualDensity: const VisualDensity(
                         horizontal: 0.0,
                         vertical: -4,
                       ),
-                      label: AutoSizeText(
+                      label: Text(
                         _showLabel
                             ? AppLocalizations.instance
                                 .translate('addressbook_show_balance')
                             : AppLocalizations.instance
                                 .translate('addressbook_show_label'),
                         textAlign: TextAlign.center,
-                        minFontSize: 10,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.secondary,
+                          color: _showLabel
+                              ? Theme.of(context).colorScheme.onPrimary
+                              : Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       selected: _showLabel,
@@ -792,18 +797,20 @@ class _AddressTabState extends State<AddressTab> {
                   ),
                   ChoiceChip(
                     backgroundColor: Theme.of(context).colorScheme.surface,
-                    selectedColor: Theme.of(context).shadowColor,
+                    selectedColor: Theme.of(context).colorScheme.primary,
                     visualDensity: const VisualDensity(
                       horizontal: 0.0,
                       vertical: -4,
                     ),
-                    label: AutoSizeText(
+                    label: Text(
                       AppLocalizations.instance
                           .translate('addressbook_hide_used'),
                       textAlign: TextAlign.center,
-                      minFontSize: 10,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
+                        color: _showUsed
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     selected: _showUsed,
@@ -816,18 +823,20 @@ class _AddressTabState extends State<AddressTab> {
                   ),
                   ChoiceChip(
                     backgroundColor: Theme.of(context).colorScheme.surface,
-                    selectedColor: Theme.of(context).shadowColor,
+                    selectedColor: Theme.of(context).colorScheme.primary,
                     visualDensity: const VisualDensity(
                       horizontal: 0.0,
                       vertical: -4,
                     ),
-                    label: AutoSizeText(
+                    label: Text(
                       AppLocalizations.instance
                           .translate('addressbook_hide_empty'),
                       textAlign: TextAlign.center,
-                      minFontSize: 10,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
+                        color: _showEmpty
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     selected: _showEmpty,

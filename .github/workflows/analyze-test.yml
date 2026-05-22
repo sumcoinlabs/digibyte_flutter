@@ -18,13 +18,16 @@ jobs:
         java-version: '11'
     - uses: subosito/flutter-action@v2
       with:
+        flutter-version: '3.32.5'
         channel: 'stable'
+        cache: true
     - run: flutter pub get
     - run: flutter analyze
     - run: flutter test -r expanded
 
   e2e-test:
-    runs-on: macos-latest
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
       matrix:
@@ -38,15 +41,19 @@ jobs:
           java-version: '11'
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.32.5'
           channel: 'stable'
+          cache: true
       - name: run tests
         uses: ReactiveCircus/android-emulator-runner@v2.27.0
         with:
           api-level: ${{ matrix.api-level }}
           arch: x86_64
-          script: | 
-           flutter drive --target=test_driver/app.dart --driver=test_driver/key_new.dart
-           flutter drive --target=test_driver/app.dart --driver=test_driver/key_imported.dart
+          script: |
+            flutter doctor -v
+            flutter pub get
+            flutter drive --target=test_driver/app.dart --driver=test_driver/key_new.dart
+            flutter drive --target=test_driver/app.dart --driver=test_driver/key_imported.dart
       # - name: Upload screenshots
       #   if: failure()
       #   uses: actions/upload-artifact@v3

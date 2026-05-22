@@ -373,7 +373,7 @@ class _TransactionListState extends State<TransactionList> {
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 10),
+                              SizedBox(height: 34),
                             ],
                           );
                         } else {
@@ -386,7 +386,7 @@ class _TransactionListState extends State<TransactionList> {
               ),
 
         Positioned(
-          top: 80,
+          top: 62,
           left: 80,
           right: 80,
           child: GestureDetector(

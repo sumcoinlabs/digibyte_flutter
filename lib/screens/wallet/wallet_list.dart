@@ -35,7 +35,6 @@ import '../../widgets/spinning_digibyte_icon.dart';
 import '../../widgets/wallet/new_wallet.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-
 // Remove "const" if BannerAdWidget doesn't have a const constructor
 import '../../widgets/banner_ad_widget.dart';
 
@@ -153,7 +152,7 @@ class _WalletListScreenState extends State<WalletListScreen>
           },
         ),
         actions: [
-      /*    // 2) Referral icon
+          /*    // 2) Referral icon
           IconButton(
             icon: const Icon(Icons.card_giftcard_rounded),
             onPressed: () {
@@ -274,15 +273,17 @@ class _WalletListScreenState extends State<WalletListScreen>
                                             .surface,
                                       ),
                                     ),
-                                    if (_importedSeed) const SizedBox(height: 20),
+                                    if (_importedSeed)
+                                      const SizedBox(height: 20),
                                     if (_importedSeed)
                                       PeerButtonBorder(
                                         key: const Key('scanForWalletsButton'),
-                                        text: AppLocalizations.instance.translate(
+                                        text:
+                                            AppLocalizations.instance.translate(
                                           'scan_for_wallets',
                                         ),
-                                        action: () => Navigator.of(context)
-                                            .pushNamed(
+                                        action: () =>
+                                            Navigator.of(context).pushNamed(
                                           Routes.appSettingsWalletScanner,
                                         ),
                                       ),
@@ -298,23 +299,23 @@ class _WalletListScreenState extends State<WalletListScreen>
                               )
                             : Expanded(
                                 child: SizedBox(
-                                  width: MediaQuery.of(context).size.width > 1200
+                                  width: MediaQuery.of(context).size.width >
+                                          1200
                                       ? MediaQuery.of(context).size.width / 2
                                       : MediaQuery.of(context).size.width,
                                   child: ListView.builder(
                                     itemCount: _activeWalletsOrdered.length,
                                     itemBuilder: (ctx, i) {
-                                      final wallet =
-                                          _activeWalletsOrdered[i];
+                                      final wallet = _activeWalletsOrdered[i];
                                       final rawBalance = wallet.balance /
                                           AvailableCoins.getDecimalProduct(
                                             identifier: wallet.name,
                                           );
                                       final coinString = formatCoin(rawBalance);
-                                      final showFiat = wallet.letterCode !=
-                                              'tDGB' &&
-                                          _appSettings
-                                              .selectedCurrency.isNotEmpty;
+                                      final showFiat =
+                                          wallet.letterCode != 'tDGB' &&
+                                              _appSettings
+                                                  .selectedCurrency.isNotEmpty;
 
                                       double fiatDouble = 0.0;
                                       if (showFiat) {
@@ -332,8 +333,9 @@ class _WalletListScreenState extends State<WalletListScreen>
                                           vertical: 8,
                                           horizontal: 16,
                                         ),
-                                        color:
-                                            Theme.of(context).colorScheme.surface,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surface,
                                         child: Column(
                                           children: [
                                             InkWell(
@@ -400,8 +402,11 @@ class _WalletListScreenState extends State<WalletListScreen>
                                                       '$coinString ${wallet.letterCode}',
                                                       style: TextStyle(
                                                         fontSize: 16,
-                                                        color:
-                                                            Colors.blue[100],
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .secondary,
+                                                        fontWeight:
+                                                            FontWeight.w500,
                                                       ),
                                                     ),
                                                     // If showFiat, show it below
@@ -411,7 +416,11 @@ class _WalletListScreenState extends State<WalletListScreen>
                                                         style: TextStyle(
                                                           fontSize: 16,
                                                           color:
-                                                              Colors.blue[50],
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .secondary,
+                                                          fontWeight:
+                                                              FontWeight.w500,
                                                         ),
                                                       ),
                                                   ],
@@ -433,7 +442,7 @@ class _WalletListScreenState extends State<WalletListScreen>
                                 ),
                               ),
 
-                    /*    /// **Chart Placeholder** (under the list of wallets)
+                        /*    /// **Chart Placeholder** (under the list of wallets)
                         const SizedBox(height: 20),
                         Container(
                           height: 200, // or any height
@@ -451,7 +460,7 @@ class _WalletListScreenState extends State<WalletListScreen>
                         // Banner ad widget (remove "const")
                         SizedBox(
                           height: 60, // adjust if needed
-                         child: BannerAdWidget(), // no const
+                          child: BannerAdWidget(), // no const
                         ),
                       ],
                     ),
@@ -466,11 +475,11 @@ class _WalletListScreenState extends State<WalletListScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-              // X (Twitter) - try deep link first, fallback to x.com
-                  IconButton(
-                    icon: const FaIcon(FontAwesomeIcons.xTwitter), // X logo
-                    color: Colors.white,
-                    onPressed: () async {
+                // X (Twitter) - try deep link first, fallback to x.com
+                IconButton(
+                  icon: const FaIcon(FontAwesomeIcons.xTwitter), // X logo
+                  color: Colors.white,
+                  onPressed: () async {
                     // Attempt the X (Twitter) scheme first
                     const xScheme = 'twitter://user?screen_name=DigiByteWallet';
                     if (await canLaunchUrlString(xScheme)) {
@@ -485,30 +494,38 @@ class _WalletListScreenState extends State<WalletListScreen>
                   },
                 ),
                 // YouTube - try deep link first, fallback to youtube.com
-                IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.youtube), // Standard YouTube logo
-                  color: Colors.white,
-                  iconSize: 24, // Consistent size with X logo
-                  tooltip: 'Visit DigiByteWallet on YouTube', // Accessibility
-                  style: IconButton.styleFrom(
-                    shape: const CircleBorder(),
-                    backgroundColor: Colors.red, // YouTube branding color
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
                   ),
-                  onPressed: () async {
-                    // Attempt YouTube deep link with channel ID
-                    const youtubeScheme = 'youtube://channel/UC1234567890'; // Replace with actual channel ID
-                    if (await canLaunchUrlString(youtubeScheme)) {
-                      await launchUrlString(youtubeScheme, mode: LaunchMode.externalApplication);
-                    } else {
-                      // Fallback to YouTube web URL
-                      const fallback = 'https://www.youtube.com/@DigiByteWallet';
-                      if (await canLaunchUrlString(fallback)) {
-                        await launchUrlString(fallback, mode: LaunchMode.externalApplication);
+                  child: IconButton(
+                    icon: const FaIcon(
+                      FontAwesomeIcons.youtube,
+                      color: Colors.white,
+                    ), // Standard YouTube logo
+                    iconSize: 22,
+                    tooltip: 'Visit DigiByteWallet on YouTube', // Accessibility
+                    onPressed: () async {
+                      // Attempt YouTube deep link with channel ID
+                      const youtubeScheme =
+                          'youtube://channel/UC1234567890'; // Replace with actual channel ID
+                      if (await canLaunchUrlString(youtubeScheme)) {
+                        await launchUrlString(youtubeScheme,
+                            mode: LaunchMode.externalApplication);
+                      } else {
+                        // Fallback to YouTube web URL
+                        const fallback =
+                            'https://www.youtube.com/@DigiByteWallet';
+                        if (await canLaunchUrlString(fallback)) {
+                          await launchUrlString(fallback,
+                              mode: LaunchMode.externalApplication);
+                        }
                       }
-                    }
-                  },
+                    },
+                  ),
                 ),
-            /*    // Telegram - "tg://resolve?domain=sumcoins"
+                /*    // Telegram - "tg://resolve?domain=sumcoins"
                 IconButton(
                   icon: Icon(Icons.chat_bubble_rounded),
                   color: Colors.white,
@@ -729,7 +746,8 @@ class _WalletListScreenState extends State<WalletListScreen>
   Future<void> _orderWallets() async {
     final values = _walletProvider.availableWalletValues;
     final order = _appSettings.walletOrder;
-    values.sort((a, b) => order.indexOf(a.name).compareTo(order.indexOf(b.name)));
+    values
+        .sort((a, b) => order.indexOf(a.name).compareTo(order.indexOf(b.name)));
     _activeWalletsOrdered = _showHiddenWallets
         ? values
         : values.where((wallet) => !wallet.hidden).toList();

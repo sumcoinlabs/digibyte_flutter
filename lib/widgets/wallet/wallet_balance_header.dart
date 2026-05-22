@@ -62,9 +62,9 @@ class WalletBalanceHeader extends StatelessWidget {
 
     return Column(
       children: [
-        const SizedBox(height: 24),
+        const SizedBox(height: 28),
         WalletHomeConnection(_connectionState),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -76,9 +76,9 @@ class WalletBalanceHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                    '${NumberFormat("#,##0.########").format(coinBalance)}',
+                      '${NumberFormat("#,##0.########").format(coinBalance)}',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 25,
                         color: Colors.grey[100],
                         letterSpacing: 1.0,
                         fontWeight: FontWeight.bold,
@@ -88,7 +88,7 @@ class WalletBalanceHeader extends StatelessWidget {
                     Text(
                       _wallet.letterCode,
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 25,
                         color: Colors.grey[100],
                         fontWeight: FontWeight.w500,
                       ),
@@ -103,7 +103,7 @@ class WalletBalanceHeader extends StatelessWidget {
                     valueInFiat: Text(
                       '${NumberFormat("#,##0.00").format(fiatBalance)} ${settings.selectedCurrency}',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         color: Colors.grey[300],
                         letterSpacing: 1.1,
                         fontWeight: FontWeight.w700,
@@ -112,7 +112,7 @@ class WalletBalanceHeader extends StatelessWidget {
                     fiatCoinValue: Text(
                       '1 ${_wallet.letterCode} = ${NumberFormat("#,##0.000000").format(fiatRate)} ${settings.selectedCurrency}',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         color: Colors.grey[300],
                         letterSpacing: 1.09,
                         fontWeight: FontWeight.w600,
@@ -129,7 +129,7 @@ class WalletBalanceHeader extends StatelessWidget {
                         Text(
                           '@ $formattedTime',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 15,
                             color: Colors.grey[300],
                             letterSpacing: 1.0,
                             fontWeight: FontWeight.w400,

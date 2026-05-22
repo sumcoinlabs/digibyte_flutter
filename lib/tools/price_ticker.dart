@@ -209,13 +209,13 @@ class PriceTicker {
       'checking price update',
     );
 
-    final RateUpdateTime = DateTime.now().subtract(const Duration(minutes: 10));
+    final RateUpdateTime = DateTime.now().subtract(const Duration(minutes: 1));
 
     if (settings.latestTickerUpdate.isBefore(RateUpdateTime)) {
       LoggerWrapper.logInfo(
         'PriceTicker',
         'checkUpdate',
-        'last update older than 10 minutes (${settings.latestTickerUpdate})',
+        'last update older than 1 minute (${settings.latestTickerUpdate})',
       );
 
       final data = await getDataFromTicker();
@@ -249,7 +249,7 @@ class PriceTicker {
       LoggerWrapper.logInfo(
         'PriceTicker',
         'checkUpdate',
-        'last update happened within 10 minutes. ${settings.latestTickerUpdate}',
+        'last update happened within 1 minute. ${settings.latestTickerUpdate}',
       );
     }
   }
@@ -258,7 +258,7 @@ class PriceTicker {
     if (_isUpdating) return;
     _isUpdating = true;
 
-    Timer.periodic(const Duration(minutes: 10), (Timer timer) {
+    Timer.periodic(const Duration(minutes: 1), (Timer timer) {
       checkUpdate(settings);
     });
   }

@@ -15,18 +15,20 @@ class WalletHomeConnection extends StatelessWidget {
       widget = Text(
         AppLocalizations.instance.translate('wallet_connected'),
         style: TextStyle(
-          color: Theme.of(context).colorScheme.surface,
-          letterSpacing: 1.4,
-          fontSize: 16,
+          color: Theme.of(context).colorScheme.onPrimary,
+          letterSpacing: 1.6,
+          fontSize: 20,
+          fontWeight: FontWeight.w500,
         ),
       );
     } else if (_connectionState == BackendConnectionState.offline) {
       widget = Text(
         AppLocalizations.instance.translate('wallet_offline'),
         style: TextStyle(
-          color: Theme.of(context).colorScheme.surface,
-          fontSize: 16,
-          letterSpacing: 1.4,
+          color: Theme.of(context).colorScheme.onPrimary,
+          fontSize: 20,
+          letterSpacing: 1.6,
+          fontWeight: FontWeight.w500,
         ),
       );
     } else {
@@ -38,10 +40,10 @@ class WalletHomeConnection extends StatelessWidget {
       children: [
         Image.asset(
           'assets/icon/dgb-icon-white-256.png',
-          width: 20,
+          width: 24,
         ),
         const SizedBox(
-          width: 10,
+          width: 12,
         ),
         widget,
       ],

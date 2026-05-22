@@ -103,6 +103,15 @@ class AppSettingsProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  bool get hideWalletBalances {
+    return _appOptions.hideWalletBalances;
+  }
+
+  void toggleHideWalletBalances() {
+    _appOptions.hideWalletBalances = !_appOptions.hideWalletBalances;
+    notifyListeners();
+  }
+
   String get buildIdentifier {
     return _appOptions.buildIdentifier;
   }

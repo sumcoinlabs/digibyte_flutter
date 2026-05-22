@@ -291,6 +291,12 @@ class _TransactionConfirmationScreenState
                                                 .allRecipientOutPutsAreZero
                                             ? 0
                                             : buildResult.totalAmount,
+                                        fiatRateAtTx:
+                                            arguments.fiatPricePerCoin,
+                                        fiatCodeAtTx: arguments.fiatCode,
+                                        fiatSnapshotTimestamp: DateTime.now()
+                                                .millisecondsSinceEpoch ~/
+                                            1000,
                                       );
                                       //broadcast
                                       electrumConnection.broadcastTransaction(

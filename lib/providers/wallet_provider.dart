@@ -858,8 +858,15 @@ class WalletProvider with ChangeNotifier {
     required BuildResult buildResult,
     required int totalValue,
     required int totalFees,
+    double fiatRateAtTx = 0.0,
+    String fiatCodeAtTx = '',
+    int fiatSnapshotTimestamp = 0,
   }) async {
     final openWallet = getSpecificCoinWallet(identifier);
+    final startingBalance = openWallet.balance;
+    final endingBalance = (openWallet.balance - totalValue - totalFees)
+        .clamp(0, openWallet.balance)
+        .toInt();
 
     openWallet.putTransaction(
       WalletTransaction(
@@ -874,6 +881,11 @@ class WalletProvider with ChangeNotifier {
         confirmations: 0,
         broadcastHex: buildResult.hex,
         opReturn: buildResult.opReturn,
+        startingBalance: startingBalance,
+        endingBalance: endingBalance,
+        fiatRateAtTx: fiatRateAtTx,
+        fiatCodeAtTx: fiatCodeAtTx,
+        fiatSnapshotTimestamp: fiatSnapshotTimestamp,
       ),
     );
 
@@ -909,6 +921,11 @@ class WalletProvider with ChangeNotifier {
               confirmations: 0,
               broadcastHex: '',
               opReturn: buildResult.opReturn,
+              startingBalance: startingBalance,
+              endingBalance: endingBalance,
+              fiatRateAtTx: fiatRateAtTx,
+              fiatCodeAtTx: fiatCodeAtTx,
+              fiatSnapshotTimestamp: fiatSnapshotTimestamp,
             ),
           );
         }
@@ -940,6 +957,9 @@ class WalletProvider with ChangeNotifier {
     required String address,
     required Map tx,
     bool notify = true,
+    double fiatRateAtTx = 0.0,
+    String fiatCodeAtTx = '',
+    int fiatSnapshotTimestamp = 0,
   }) async {
     final openWallet = getSpecificCoinWallet(identifier);
     LoggerWrapper.logInfo('WalletProvider', 'putTx', '$address puttx: $tx');
@@ -1017,6 +1037,13 @@ class WalletProvider with ChangeNotifier {
                   confirmations: tx['confirmations'] ?? 0,
                   broadcastHex: '',
                   opReturn: '',
+                  startingBalance: (openWallet.balance - txValue)
+                      .clamp(0, openWallet.balance)
+                      .toInt(),
+                  endingBalance: openWallet.balance,
+                  fiatRateAtTx: fiatRateAtTx,
+                  fiatCodeAtTx: fiatCodeAtTx,
+                  fiatSnapshotTimestamp: fiatSnapshotTimestamp,
                 ),
               );
             }
@@ -1305,6 +1332,60 @@ class WalletProvider with ChangeNotifier {
 
     await openWallet.save();
     notifyListeners();
+  }
+
+  Future<void> snapshotRecentTransactionPrices({
+    required String identifier,
+    required double fiatRateAtTx,
+    required String fiatCodeAtTx,
+  }) async {
+    if (fiatRateAtTx <= 0 || fiatCodeAtTx.isEmpty) {
+      return;
+    }
+
+    final openWallet = getSpecificCoinWallet(identifier);
+    final nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    var changed = false;
+
+    for (final tx in openWallet.transactions) {
+      if (tx.confirmations == -1 || tx.fiatRateAtTx > 0) {
+        continue;
+      }
+
+      // Only snapshot transactions that are new/recent from this app's point
+      // forward. Do not pretend old historical transactions have an accurate
+      // historical fiat rate.
+      final isRecent = tx.timestamp == 0 ||
+          (nowSeconds - tx.timestamp).abs() <=
+              const Duration(hours: 24).inSeconds;
+
+      if (!isRecent) {
+        continue;
+      }
+
+      tx.newFiatRateAtTx = fiatRateAtTx;
+      tx.newFiatCodeAtTx = fiatCodeAtTx;
+      tx.newFiatSnapshotTimestamp = nowSeconds;
+
+      if (tx.startingBalance == 0 && tx.endingBalance == 0) {
+        if (tx.direction == 'in') {
+          tx.newStartingBalance = (openWallet.balance - tx.value)
+              .clamp(0, openWallet.balance)
+              .toInt();
+          tx.newEndingBalance = openWallet.balance;
+        } else {
+          tx.newStartingBalance = openWallet.balance + tx.value + tx.fee;
+          tx.newEndingBalance = openWallet.balance;
+        }
+      }
+
+      changed = true;
+    }
+
+    if (changed) {
+      await openWallet.save();
+      notifyListeners();
+    }
   }
 
   Future<void> updateRejected(

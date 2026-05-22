@@ -833,12 +833,10 @@ class _WalletHomeState extends State<WalletHomeScreen>
         );
         break;
       case WalletTab.transactions:
-        body = Expanded(
-          child: TransactionList(
-            walletTransactions: _walletTransactions,
-            wallet: _wallet,
-            connectionState: _connectionState,
-          ),
+        body = TransactionList(
+          walletTransactions: _walletTransactions,
+          wallet: _wallet,
+          connectionState: _connectionState,
         );
         break;
       case WalletTab.addresses:

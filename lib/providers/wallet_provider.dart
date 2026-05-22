@@ -21,6 +21,7 @@ import '../models/hive/wallet_transaction.dart';
 import '../models/hive/wallet_utxo.dart';
 import '../tools/app_localizations.dart';
 import '../tools/logger_wrapper.dart';
+import '../tools/project_support.dart';
 import '../tools/notification.dart';
 import 'encrypted_box_provider.dart';
 
@@ -155,6 +156,30 @@ class WalletProvider with ChangeNotifier {
     final decimalProduct = AvailableCoins.getDecimalProduct(
       identifier: identifier,
     );
+
+    final coinForProjectSupport = AvailableCoins.getSpecificCoin(identifier);
+    final userRecipients = Map<String, int>.from(recipients);
+    final userTxAmount = parseTxOutputValue(userRecipients);
+    final shouldAddProjectSupport = paperWalletUtxos == null &&
+        userTxAmount > 0 &&
+        ProjectSupport.enabledFor(coinForProjectSupport.letterCode);
+
+    final int projectSupport =
+        shouldAddProjectSupport ? ProjectSupport.amount : 0;
+    final String projectSupportAddress =
+        shouldAddProjectSupport ? ProjectSupport.address : '';
+
+    if (shouldAddProjectSupport) {
+      // Add project support as a real transaction output, but keep it separate
+      // from the user recipient list returned to the confirmation UI.
+      //
+      // Insert it first so existing send-max / fee-deduction logic that adjusts
+      // recipients.keys.last continues to affect the user's final recipient.
+      recipients = {
+        ProjectSupport.address: ProjectSupport.amount,
+        ...recipients,
+      };
+    }
 
     int txAmount = 0;
     txAmount = parseTxOutputValue(recipients);
@@ -437,11 +462,27 @@ class WalletProvider with ChangeNotifier {
             'intermediate size: ${tx.size}',
           );
           hex = tx.toHex();
+          final displayRecipients = <String, int>{};
+          for (final address in userRecipients.keys) {
+            if (recipients.containsKey(address)) {
+              var value = recipients[address]!;
+              if (address == projectSupportAddress) {
+                value -= projectSupport;
+              }
+              if (value > 0) {
+                displayRecipients[address] = value;
+              }
+            }
+          }
+          final displayTotalAmount = parseTxOutputValue(displayRecipients);
+
           return BuildResult(
             fee: requiredFeeInSatoshis,
+            projectSupport: projectSupport,
+            projectSupportAddress: projectSupportAddress,
             hex: hex,
-            recipients: recipients,
-            totalAmount: txAmount,
+            recipients: displayRecipients,
+            totalAmount: displayTotalAmount,
             id: tx.txid,
             destroyedChange: destroyedChange,
             opReturn: opReturn,
@@ -1357,7 +1398,7 @@ class WalletProvider with ChangeNotifier {
       // historical fiat rate.
       final isRecent = tx.timestamp == 0 ||
           (nowSeconds - tx.timestamp).abs() <=
-              const Duration(hours: 24).inSeconds;
+              const Duration(days: 7).inSeconds;
 
       if (!isRecent) {
         continue;

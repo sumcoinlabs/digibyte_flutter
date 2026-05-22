@@ -58,6 +58,7 @@ class _WalletHomeState extends State<WalletHomeScreen>
   late Iterable _listenedAddresses;
   late List<WalletTransaction> _walletTransactions = [];
   late ServerProvider _servers;
+  bool _didInitialTransactionRefresh = false;
   String? _address;
   String? _label;
   String _searchString = '';
@@ -95,6 +96,7 @@ class _WalletHomeState extends State<WalletHomeScreen>
 
   @override
   void dispose() {
+    _connectionProvider.closeConnection();
     _walletProvider.closeWallet(_wallet.name);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -271,28 +273,42 @@ class _WalletHomeState extends State<WalletHomeScreen>
           );
         }
       }
+
+      // One-time refresh after connection so old cached confirmation counts
+      // get corrected by Electrum. After this, confirmed transactions can
+      // advance locally as new block headers arrive.
+      if (_connectionState == BackendConnectionState.connected &&
+          _didInitialTransactionRefresh == false &&
+          _walletTransactions.isNotEmpty) {
+        _didInitialTransactionRefresh = true;
+        _requestTransactionRefresh(includeConfirmed: true);
+      }
+
       if (_connectionProvider.latestBlock > _latestBlock) {
         LoggerWrapper.logInfo(
           'WalletHome',
           'didChangeDependencies',
           'new block ${_connectionProvider.latestBlock}',
         );
+        final blockDelta = _latestBlock == 0
+            ? 0
+            : _connectionProvider.latestBlock - _latestBlock;
         _latestBlock = _connectionProvider.latestBlock;
 
-        var unconfirmedTx = _walletTransactions.where(
-          (element) =>
-              element.confirmations < 6 &&
-              element.confirmations != -1 &&
-              element.timestamp != -1,
-        );
-        for (var element in unconfirmedTx) {
-          LoggerWrapper.logInfo(
-            'WalletHome',
-            'didChangeDependencies',
-            'requesting update for ${element.txid}',
+        // Keep old confirmed transactions moving forward without asking
+        // Electrum for every old tx on every block.
+        if (blockDelta > 0) {
+          await _walletProvider.advanceTransactionConfirmations(
+            identifier: _wallet.name,
+            blockDelta: blockDelta,
           );
-          _connectionProvider.requestTxUpdate(element.txid);
+          _walletTransactions =
+              await _walletProvider.getWalletTransactions(_wallet.name);
         }
+
+        // Still ask Electrum for unconfirmed/young txs so they get real
+        // confirmation status, blocktime, and rejection updates.
+        _requestTransactionRefresh();
 
         if (_wallet.unconfirmedBalance > 0) {
           await _walletProvider.updateWalletBalance(_wallet.name);
@@ -301,6 +317,30 @@ class _WalletHomeState extends State<WalletHomeScreen>
     }
 
     super.didChangeDependencies();
+  }
+
+  void _requestTransactionRefresh({
+    bool includeConfirmed = false,
+  }) {
+    final txs = includeConfirmed
+        ? _walletTransactions.where(
+            (element) => element.confirmations != -1,
+          )
+        : _walletTransactions.where(
+            (element) =>
+                element.confirmations < 6 &&
+                element.confirmations != -1 &&
+                element.timestamp != -1,
+          );
+
+    for (final element in txs) {
+      LoggerWrapper.logInfo(
+        'WalletHome',
+        '_requestTransactionRefresh',
+        'requesting update for ${element.txid}',
+      );
+      _connectionProvider.requestTxUpdate(element.txid);
+    }
   }
 
   void _rebroadCastUnsendTx() {
@@ -373,10 +413,13 @@ class _WalletHomeState extends State<WalletHomeScreen>
   }
 
   @override
-  void deactivate() async {
-    if (ModalRoute.of(context)!.settings.arguments != null) {
-      await _connectionProvider.closeConnection();
-    }
+  void deactivate() {
+    // Do not close the Electrum connection here.
+    //
+    // deactivate() can be called during normal navigation or widget-tree
+    // changes while the wallet is still active. Closing the connection here
+    // causes the wallet to appear disconnected until the user backs out and
+    // re-enters the wallet screen.
     super.deactivate();
   }
 
@@ -409,7 +452,8 @@ class _WalletHomeState extends State<WalletHomeScreen>
                 Navigator.pop(context);
               },
               child: Text(
-                AppLocalizations.instance.translate('server_settings_alert_cancel'),
+                AppLocalizations.instance
+                    .translate('server_settings_alert_cancel'),
               ),
             ),
             TextButton(
@@ -679,8 +723,7 @@ class _WalletHomeState extends State<WalletHomeScreen>
                   color: Theme.of(context).colorScheme.secondary,
                 ),
                 title: Text(
-                  AppLocalizations.instance
-                      .translate('sign_reset_button'),
+                  AppLocalizations.instance.translate('sign_reset_button'),
                 ),
               ),
             ),
@@ -725,7 +768,8 @@ class _WalletHomeState extends State<WalletHomeScreen>
           icon: _wallet.watchOnly
               ? const SizedBox()
               : const Icon(Icons.download_rounded),
-          label: AppLocalizations.instance.translate('wallet_bottom_nav_receive'),
+          label:
+              AppLocalizations.instance.translate('wallet_bottom_nav_receive'),
           backgroundColor: bgColor,
         ),
         BottomNavigationBarItem(
@@ -854,7 +898,7 @@ class _WalletHomeState extends State<WalletHomeScreen>
                   Expanded(
                     child: _calcBody(),
                   ),
-                 VisibilityDetector(
+                  VisibilityDetector(
                     key: const Key('banner ad detector'),
                     onVisibilityChanged: (VisibilityInfo info) {
                       if (info.visibleFraction == 1) {

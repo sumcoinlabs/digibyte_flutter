@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:digibyte/providers/connection_provider.dart';
+import 'package:digibyte/providers/app_settings_provider.dart';
 import 'package:digibyte/widgets/double_tab_to_clipboard.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -12,6 +13,7 @@ import '../../models/available_coins.dart';
 import '../../models/hive/coin_wallet.dart';
 import '../../models/hive/wallet_transaction.dart';
 import '../../tools/app_localizations.dart';
+import '../../tools/price_ticker.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/service_container.dart';
 
@@ -28,6 +30,23 @@ class TransactionDetails extends StatelessWidget {
     final decimalProduct = AvailableCoins.getDecimalProduct(
       identifier: coinWallet.name,
     );
+    final appSettings = context.watch<AppSettingsProvider>();
+    final currentFiatRate = PriceTicker.renderPrice(
+      1,
+      tx.fiatCodeAtTx.isNotEmpty
+          ? tx.fiatCodeAtTx
+          : appSettings.selectedCurrency,
+      coinWallet.letterCode,
+      appSettings.exchangeRates,
+    );
+    final txCoinValue = tx.value / decimalProduct;
+    final fiatValueAtTx = tx.fiatRateAtTx * txCoinValue;
+    final currentFiatValue = currentFiatRate * txCoinValue;
+    final percentChange = tx.fiatRateAtTx > 0
+        ? ((currentFiatRate - tx.fiatRateAtTx) / tx.fiatRateAtTx) * 100
+        : 0.0;
+    final snapshotLabel =
+        tx.direction == 'out' ? 'Rate when sent' : 'Rate when received';
 
     return Scaffold(
       appBar: AppBar(
@@ -99,6 +118,59 @@ class TransactionDetails extends StatelessWidget {
                       ],
                     )
                   : Container(),
+              if (tx.fiatRateAtTx > 0) ...[
+                const Divider(),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Historical Value',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    renderDetailRow(
+                      context,
+                      'Starting balance',
+                      '${NumberFormat("#,##0.########").format(tx.startingBalance / decimalProduct)} ${coinWallet.letterCode}',
+                    ),
+                    renderDetailRow(
+                      context,
+                      'Ending balance',
+                      '${NumberFormat("#,##0.########").format(tx.endingBalance / decimalProduct)} ${coinWallet.letterCode}',
+                    ),
+                    renderDetailRow(
+                      context,
+                      snapshotLabel,
+                      '1 ${coinWallet.letterCode} = ${NumberFormat("#,##0.000000").format(tx.fiatRateAtTx)} ${tx.fiatCodeAtTx}',
+                    ),
+                    renderDetailRow(
+                      context,
+                      'Value then',
+                      '${NumberFormat("#,##0.00######").format(fiatValueAtTx)} ${tx.fiatCodeAtTx}',
+                    ),
+                    if (currentFiatRate > 0)
+                      renderDetailRow(
+                        context,
+                        'Current value',
+                        '${NumberFormat("#,##0.00######").format(currentFiatValue)} ${tx.fiatCodeAtTx}',
+                      ),
+                    if (currentFiatRate > 0)
+                      renderDetailRow(
+                        context,
+                        'Change since then',
+                        '${percentChange >= 0 ? "+" : ""}${NumberFormat("#,##0.00").format(percentChange)}%',
+                        valueColor: percentChange > 0
+                            ? const Color(0xFF2EAD4F)
+                            : percentChange < 0
+                                ? Theme.of(context).colorScheme.error
+                                : Theme.of(context).colorScheme.secondary,
+                      ),
+                  ],
+                ),
+              ],
               const Divider(),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,6 +298,41 @@ class TransactionDetails extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget renderDetailRow(
+    BuildContext context,
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: valueColor ?? Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

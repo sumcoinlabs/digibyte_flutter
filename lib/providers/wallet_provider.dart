@@ -21,6 +21,7 @@ import '../models/hive/wallet_transaction.dart';
 import '../models/hive/wallet_utxo.dart';
 import '../tools/app_localizations.dart';
 import '../tools/logger_wrapper.dart';
+import '../tools/project_support.dart';
 import '../tools/notification.dart';
 import 'encrypted_box_provider.dart';
 
@@ -155,6 +156,30 @@ class WalletProvider with ChangeNotifier {
     final decimalProduct = AvailableCoins.getDecimalProduct(
       identifier: identifier,
     );
+
+    final coinForProjectSupport = AvailableCoins.getSpecificCoin(identifier);
+    final userRecipients = Map<String, int>.from(recipients);
+    final userTxAmount = parseTxOutputValue(userRecipients);
+    final shouldAddProjectSupport = paperWalletUtxos == null &&
+        userTxAmount > 0 &&
+        ProjectSupport.enabledFor(coinForProjectSupport.letterCode);
+
+    final int projectSupport =
+        shouldAddProjectSupport ? ProjectSupport.amount : 0;
+    final String projectSupportAddress =
+        shouldAddProjectSupport ? ProjectSupport.address : '';
+
+    if (shouldAddProjectSupport) {
+      // Add project support as a real transaction output, but keep it separate
+      // from the user recipient list returned to the confirmation UI.
+      //
+      // Insert it first so existing send-max / fee-deduction logic that adjusts
+      // recipients.keys.last continues to affect the user's final recipient.
+      recipients = {
+        ProjectSupport.address: ProjectSupport.amount,
+        ...recipients,
+      };
+    }
 
     int txAmount = 0;
     txAmount = parseTxOutputValue(recipients);
@@ -437,11 +462,27 @@ class WalletProvider with ChangeNotifier {
             'intermediate size: ${tx.size}',
           );
           hex = tx.toHex();
+          final displayRecipients = <String, int>{};
+          for (final address in userRecipients.keys) {
+            if (recipients.containsKey(address)) {
+              var value = recipients[address]!;
+              if (address == projectSupportAddress) {
+                value -= projectSupport;
+              }
+              if (value > 0) {
+                displayRecipients[address] = value;
+              }
+            }
+          }
+          final displayTotalAmount = parseTxOutputValue(displayRecipients);
+
           return BuildResult(
             fee: requiredFeeInSatoshis,
+            projectSupport: projectSupport,
+            projectSupportAddress: projectSupportAddress,
             hex: hex,
-            recipients: recipients,
-            totalAmount: txAmount,
+            recipients: displayRecipients,
+            totalAmount: displayTotalAmount,
             id: tx.txid,
             destroyedChange: destroyedChange,
             opReturn: opReturn,
@@ -858,8 +899,15 @@ class WalletProvider with ChangeNotifier {
     required BuildResult buildResult,
     required int totalValue,
     required int totalFees,
+    double fiatRateAtTx = 0.0,
+    String fiatCodeAtTx = '',
+    int fiatSnapshotTimestamp = 0,
   }) async {
     final openWallet = getSpecificCoinWallet(identifier);
+    final startingBalance = openWallet.balance;
+    final endingBalance = (openWallet.balance - totalValue - totalFees)
+        .clamp(0, openWallet.balance)
+        .toInt();
 
     openWallet.putTransaction(
       WalletTransaction(
@@ -874,6 +922,11 @@ class WalletProvider with ChangeNotifier {
         confirmations: 0,
         broadcastHex: buildResult.hex,
         opReturn: buildResult.opReturn,
+        startingBalance: startingBalance,
+        endingBalance: endingBalance,
+        fiatRateAtTx: fiatRateAtTx,
+        fiatCodeAtTx: fiatCodeAtTx,
+        fiatSnapshotTimestamp: fiatSnapshotTimestamp,
       ),
     );
 
@@ -909,6 +962,11 @@ class WalletProvider with ChangeNotifier {
               confirmations: 0,
               broadcastHex: '',
               opReturn: buildResult.opReturn,
+              startingBalance: startingBalance,
+              endingBalance: endingBalance,
+              fiatRateAtTx: fiatRateAtTx,
+              fiatCodeAtTx: fiatCodeAtTx,
+              fiatSnapshotTimestamp: fiatSnapshotTimestamp,
             ),
           );
         }
@@ -940,6 +998,9 @@ class WalletProvider with ChangeNotifier {
     required String address,
     required Map tx,
     bool notify = true,
+    double fiatRateAtTx = 0.0,
+    String fiatCodeAtTx = '',
+    int fiatSnapshotTimestamp = 0,
   }) async {
     final openWallet = getSpecificCoinWallet(identifier);
     LoggerWrapper.logInfo('WalletProvider', 'putTx', '$address puttx: $tx');
@@ -1017,6 +1078,13 @@ class WalletProvider with ChangeNotifier {
                   confirmations: tx['confirmations'] ?? 0,
                   broadcastHex: '',
                   opReturn: '',
+                  startingBalance: (openWallet.balance - txValue)
+                      .clamp(0, openWallet.balance)
+                      .toInt(),
+                  endingBalance: openWallet.balance,
+                  fiatRateAtTx: fiatRateAtTx,
+                  fiatCodeAtTx: fiatCodeAtTx,
+                  fiatSnapshotTimestamp: fiatSnapshotTimestamp,
                 ),
               );
             }
@@ -1305,6 +1373,60 @@ class WalletProvider with ChangeNotifier {
 
     await openWallet.save();
     notifyListeners();
+  }
+
+  Future<void> snapshotRecentTransactionPrices({
+    required String identifier,
+    required double fiatRateAtTx,
+    required String fiatCodeAtTx,
+  }) async {
+    if (fiatRateAtTx <= 0 || fiatCodeAtTx.isEmpty) {
+      return;
+    }
+
+    final openWallet = getSpecificCoinWallet(identifier);
+    final nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    var changed = false;
+
+    for (final tx in openWallet.transactions) {
+      if (tx.confirmations == -1 || tx.fiatRateAtTx > 0) {
+        continue;
+      }
+
+      // Only snapshot transactions that are new/recent from this app's point
+      // forward. Do not pretend old historical transactions have an accurate
+      // historical fiat rate.
+      final isRecent = tx.timestamp == 0 ||
+          (nowSeconds - tx.timestamp).abs() <=
+              const Duration(days: 7).inSeconds;
+
+      if (!isRecent) {
+        continue;
+      }
+
+      tx.newFiatRateAtTx = fiatRateAtTx;
+      tx.newFiatCodeAtTx = fiatCodeAtTx;
+      tx.newFiatSnapshotTimestamp = nowSeconds;
+
+      if (tx.startingBalance == 0 && tx.endingBalance == 0) {
+        if (tx.direction == 'in') {
+          tx.newStartingBalance = (openWallet.balance - tx.value)
+              .clamp(0, openWallet.balance)
+              .toInt();
+          tx.newEndingBalance = openWallet.balance;
+        } else {
+          tx.newStartingBalance = openWallet.balance + tx.value + tx.fee;
+          tx.newEndingBalance = openWallet.balance;
+        }
+      }
+
+      changed = true;
+    }
+
+    if (changed) {
+      await openWallet.save();
+      notifyListeners();
+    }
   }
 
   Future<void> updateRejected(

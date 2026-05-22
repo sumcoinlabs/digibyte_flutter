@@ -73,16 +73,17 @@ class _TransactionConfirmationScreenState
     final BuildResult buildResult = arguments.buildResult;
     final String coinLetterCode = arguments.coinLetterCode;
     final int decimalProduct = arguments.decimalProduct;
+    final int combinedFee = buildResult.fee + buildResult.projectSupport;
     int totalAmountWithFeesAndDust =
-        buildResult.fee + buildResult.totalAmount + buildResult.destroyedChange;
+        combinedFee + buildResult.totalAmount + buildResult.destroyedChange;
     final bool fiatAvailable = !arguments.coinIdentifier.contains('Testnet') &&
         arguments.fiatPricePerCoin != 0;
 
     if (buildResult.feesHaveBeenDeductedFromRecipient) {
       //recipient output was cut to pay for fees!
-      totalAmountWithFeesAndDust = buildResult.totalAmount + buildResult.fee;
+      totalAmountWithFeesAndDust = buildResult.totalAmount + combinedFee;
     } else if (buildResult.allRecipientOutPutsAreZero) {
-      totalAmountWithFeesAndDust -= buildResult.fee;
+      totalAmountWithFeesAndDust -= combinedFee;
     } else if (buildResult.destroyedChange > 0) {
       totalAmountWithFeesAndDust =
           buildResult.totalAmount + buildResult.destroyedChange;
@@ -139,11 +140,11 @@ class _TransactionConfirmationScreenState
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               SelectableText(
-                                '${buildResult.fee / decimalProduct} $coinLetterCode',
+                                '${combinedFee / decimalProduct} $coinLetterCode',
                               ),
                               if (fiatAvailable)
                                 Text(
-                                  '${((buildResult.fee / decimalProduct) * arguments.fiatPricePerCoin).toStringAsFixed(4)} ${arguments.fiatCode}',
+                                  '${((combinedFee / decimalProduct) * arguments.fiatPricePerCoin).toStringAsFixed(4)} ${arguments.fiatCode}',
                                 ),
                             ],
                           ),
@@ -286,7 +287,7 @@ class _TransactionConfirmationScreenState
                                       await walletProvcider.putOutgoingTx(
                                         identifier: arguments.coinIdentifier,
                                         buildResult: buildResult,
-                                        totalFees: buildResult.fee,
+                                        totalFees: combinedFee,
                                         totalValue: buildResult
                                                 .allRecipientOutPutsAreZero
                                             ? 0

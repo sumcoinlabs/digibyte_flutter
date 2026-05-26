@@ -1,3 +1,10 @@
+### **0.1.4** (2026-05-23)
+- Updated Electrum connections and viability 
+- Cleaned up light and dark mode schemas
+- More precision with rate info down to 1 min
+- Ability to hide Balance for privacy.
+- Updated to latest dependancies.
+
 ### **0.1.3** (2025-06-26)
 
 - Urgent Electrum Blockchain connection error fix

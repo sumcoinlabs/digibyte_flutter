@@ -23,6 +23,7 @@ firebase.json
 /lib/widgets/collector.dart
 /lib/firebase_options.dart
 /lib/main.dart
+/lib/tools/project_support.dart
 
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line

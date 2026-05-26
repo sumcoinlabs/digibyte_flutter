@@ -51,14 +51,17 @@ class ElectrumBackend extends DataSource {
     bool fromConnectivityChangeOrLifeCycle = false,
   }) async {
     await _servers.init(walletName);
-    _requiredProtocol = AvailableCoins.getSpecificCoin(walletName).electrumRequiredProtocol;
+    _requiredProtocol =
+        AvailableCoins.getSpecificCoin(walletName).electrumRequiredProtocol;
 
     var connectivityResult = await (Connectivity().checkConnectivity());
 
     if (connectivityResult.contains(ConnectivityResult.none)) {
       updateConnectionState = BackendConnectionState.offline;
 
-      _offlineSubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> result) async {
+      _offlineSubscription = Connectivity()
+          .onConnectivityChanged
+          .listen((List<ConnectivityResult> result) async {
         if (result.isNotEmpty && result.first != ConnectivityResult.none) {
           // Connection re-established
           await _cancelSubscriptionAndCleanup();
@@ -69,7 +72,8 @@ class ElectrumBackend extends DataSource {
             requestedFromWalletHome: requestedFromWalletHome,
             fromConnectivityChangeOrLifeCycle: true,
           );
-        } else if (result.isNotEmpty && result.first == ConnectivityResult.none) {
+        } else if (result.isNotEmpty &&
+            result.first == ConnectivityResult.none) {
           updateConnectionState = BackendConnectionState.offline;
         }
       });
@@ -86,7 +90,9 @@ class ElectrumBackend extends DataSource {
       await connect();
 
       if (_connection != null && _serverType != null) {
-        var stream = _serverType == ElectrumServerType.ssl ? _connection : _connection!.stream;
+        var stream = _serverType == ElectrumServerType.ssl
+            ? _connection
+            : _connection!.stream;
 
         stream.listen(
           (elem) {
@@ -117,7 +123,8 @@ class ElectrumBackend extends DataSource {
         return true;
       }
       return false;
-    } else if (fromConnectivityChangeOrLifeCycle == false && _closedIntentionally == false) {
+    } else if (fromConnectivityChangeOrLifeCycle == false &&
+        _closedIntentionally == false) {
       LoggerWrapper.logInfo(
         'ElectrumConnection',
         'init',
@@ -174,7 +181,8 @@ class ElectrumBackend extends DataSource {
         final split = _serverUrl!.split(':');
         final host = split[1].replaceAll('//', '');
         final port = int.parse(split[2]);
-        _connection = await SecureSocket.connect(host, port, timeout: const Duration(seconds: 10));
+        _connection = await SecureSocket.connect(host, port,
+            timeout: const Duration(seconds: 10));
       } else if (kIsWeb) {
         _connectionAttempt++; // Try next server on web if SSL not supported
         if (_connectionAttempt < _availableServers!.length) {
@@ -199,15 +207,57 @@ class ElectrumBackend extends DataSource {
   }
 
   void _attemptReconnect() {
-    if (_connectionAttempt < _availableServers!.length) {
-      connect();
-    } else {
+    if (_closedIntentionally) {
+      LoggerWrapper.logInfo(
+        'ElectrumConnection',
+        '_attemptReconnect',
+        'not reconnecting because connection was closed intentionally',
+      );
+      return;
+    }
+
+    if (_reconnectTimer?.isActive ?? false) {
+      LoggerWrapper.logInfo(
+        'ElectrumConnection',
+        '_attemptReconnect',
+        'reconnect already scheduled',
+      );
+      return;
+    }
+
+    if (_availableServers == null || _availableServers!.isEmpty) {
+      updateConnectionState = BackendConnectionState.offline;
       LoggerWrapper.logError(
         'ElectrumConnection',
-        'connect',
-        'No more servers to try, all connections failed.',
+        '_attemptReconnect',
+        'no available servers to reconnect to',
       );
+      return;
     }
+
+    if (_connectionAttempt >= _availableServers!.length) {
+      _connectionAttempt = 0;
+    }
+
+    updateConnectionState = BackendConnectionState.waiting;
+
+    LoggerWrapper.logInfo(
+      'ElectrumConnection',
+      '_attemptReconnect',
+      'scheduling full reconnect attempt $_connectionAttempt',
+    );
+
+    _reconnectTimer = Timer(const Duration(seconds: 2), () async {
+      _reconnectTimer = null;
+      _connection = null;
+      _serverType = null;
+
+      await init(
+        coinName,
+        requestedFromWalletHome: true,
+        fromConnectivityChangeOrLifeCycle: true,
+      );
+    });
   }
 
   void replyReceived(String id) {
@@ -329,7 +379,8 @@ class ElectrumBackend extends DataSource {
     if (_connection != null && _serverType != null) {
       if (_serverType == ElectrumServerType.ssl) {
         _connection.add(utf8.encode(encodedMessage + '\n'));
-      } else if (_serverType == ElectrumServerType.wss && _connection.sink != null) {
+      } else if (_serverType == ElectrumServerType.wss &&
+          _connection.sink != null) {
         try {
           _connection.sink.add(encodedMessage);
         } catch (e) {
@@ -361,7 +412,8 @@ class ElectrumBackend extends DataSource {
   }
 
   void handleFeatures(Map result) {
-    if (result['genesis_hash'] == AvailableCoins.getSpecificCoin(coinName).genesisHash) {
+    if (result['genesis_hash'] ==
+        AvailableCoins.getSpecificCoin(coinName).genesisHash) {
       updateConnectionState = BackendConnectionState.connected;
       sendMessage('blockchain.headers.subscribe', 'blocks');
     } else {
@@ -390,8 +442,10 @@ class ElectrumBackend extends DataSource {
   }
 
   void handleAddressStatus(String address, String? newStatus) async {
-    var oldStatus = await walletProvider.getWalletAddressStatus(coinName, address);
-    var hash = addresses.entries.firstWhereOrNull((element) => element.key == address);
+    var oldStatus =
+        await walletProvider.getWalletAddressStatus(coinName, address);
+    var hash =
+        addresses.entries.firstWhereOrNull((element) => element.key == address);
     if (hash != null && newStatus != oldStatus) {
       LoggerWrapper.logInfo(
         'ElectrumConnection',
@@ -522,7 +576,9 @@ class ElectrumBackend extends DataSource {
   }
 
   String get connectedServerUrl {
-    return connectionState == BackendConnectionState.connected ? _serverUrl ?? '' : '';
+    return connectionState == BackendConnectionState.connected
+        ? _serverUrl ?? ''
+        : '';
   }
 
   @override

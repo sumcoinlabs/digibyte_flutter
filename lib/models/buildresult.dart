@@ -2,6 +2,8 @@ import 'hive/wallet_utxo.dart';
 
 class BuildResult {
   final int fee;
+  final int projectSupport;
+  final String projectSupportAddress;
   final String hex;
   final Map<String, int> recipients;
   final int totalAmount;
@@ -15,6 +17,8 @@ class BuildResult {
 
   BuildResult({
     required this.fee,
+    this.projectSupport = 0,
+    this.projectSupportAddress = '',
     required this.hex,
     required this.recipients,
     required this.totalAmount,

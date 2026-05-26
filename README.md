@@ -132,7 +132,64 @@ Help translate DigiByte Wallet through Weblate:
 
 ## Development
 
-### Build `digicoinlib`
+### Prerequisites
+
+This project requires Flutter and the native build tools for the target platform.
+
+For iOS development:
+
+```bash
+flutter doctor
+flutter pub get
+cd ios
+pod install
+cd ..
+```
+
+For Android development:
+
+```bash
+flutter doctor
+flutter pub get
+```
+
+### Run the app
+
+List available devices:
+
+```bash
+flutter devices
+```
+
+Run on the currently selected/default device:
+
+```bash
+flutter run
+```
+
+Run on a specific simulator/device:
+
+```bash
+flutter run -d DEVICE_ID --debug
+```
+
+Example iOS simulator:
+
+```bash
+flutter run -d F1C4A80A-2E41-4FA2-B61C-1B1410E603F9 --debug
+```
+
+Run in release mode on a physical device:
+
+```bash
+flutter run --release
+```
+
+> iOS release/profile builds require a physical iPhone. They are not supported on the iOS simulator.
+
+---
+
+## Build `digicoinlib`
 
 This repository relies on [`digicoinlib`](https://github.com/sumcoinlabs/digicoinlib).
 
@@ -140,7 +197,78 @@ Please follow the build instructions for your operating system here:
 
 [digicoinlib README](https://github.com/sumcoinlabs/digicoinlib/blob/master/coinlib/README.md)
 
+---
+
+## Common Development Commands
+
+### Get dependencies
+
+```bash
+flutter pub get
+```
+
+### Run static analysis
+
+```bash
+flutter analyze
+```
+
+### Run unit/widget tests
+
+```bash
+flutter test -r expanded
+```
+
 ### Update icons
 
 ```bash
 dart run flutter_launcher_icons:main
+```
+
+### Update Hive adapters
+
+```bash
+dart run build_runner build
+```
+
+### Update splash screen
+
+```bash
+dart run flutter_native_splash:create
+```
+
+### Generate proto files
+
+```bash
+protoc --dart_out=grpc:lib/generated -Iprotos protos/marisma.proto
+```
+
+---
+
+## Build for Web
+
+```bash
+flutter pub global activate peanut
+flutter pub global run peanut -b production
+```
+
+Web files are now on the production branch and ready to be deployed.
+
+This will use the HTML renderer by default. Add `--web-renderer canvas` to peanut if you want to switch to the Canvas renderer.
+
+---
+
+## Run E2E Tests
+
+```bash
+flutter drive --target=test_driver/app.dart --driver=test_driver/key_new.dart
+flutter drive --target=test_driver/app.dart --driver=test_driver/key_imported.dart
+```
+
+---
+
+## Disclaimer
+
+This app is provided without warranty.
+
+Cryptocurrency transactions are irreversible. Use the app at your own risk and always verify addresses, amounts, backups, and transaction details before sending funds.

@@ -1,9 +1,10 @@
-### **0.1.4** (2026-05-23)
-- Updated Electrum connections and viability 
+### **0.1.4** (2026-10-18)
+- Updated Electrum connections and viability
 - Cleaned up light and dark mode schemas
-- More precision with rate info down to 1 min
+- More precision with rate info refresh every 3 mins
 - Ability to hide Balance for privacy.
 - Updated to latest dependancies.
+- Updated Send Screen with everything in one card
 
 ### **0.1.3** (2025-06-26)
 

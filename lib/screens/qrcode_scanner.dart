@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -13,15 +14,17 @@ class QRScanner extends StatefulWidget {
 }
 
 class _QRScannerState extends State<QRScanner> {
-  late QRViewController controller;
+  QRViewController? _controller;
+  StreamSubscription<Barcode>? _scanSubscription;
+  bool _handledScan = false;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
 
   @override
   void reassemble() {
     super.reassemble();
     if (Platform.isAndroid) {
-      controller.pauseCamera();
-      controller.resumeCamera();
+      _controller?.pauseCamera();
+      _controller?.resumeCamera();
     }
   }
 
@@ -43,7 +46,7 @@ class _QRScannerState extends State<QRScanner> {
                   right: 25,
                   child: FloatingActionButton(
                     backgroundColor: Theme.of(context).primaryColor,
-                    onPressed: () async => await controller.toggleFlash(),
+                    onPressed: () async => await _controller?.toggleFlash(),
                     child: const Icon(
                       Icons.lightbulb,
                       color: Colors.white,
@@ -76,23 +79,37 @@ class _QRScannerState extends State<QRScanner> {
     );
   }
 
-  void _onQRViewCreated(
-    QRViewController controller,
-  ) async {
-    setState(() {
-      this.controller = controller;
-    });
-
+  void _onQRViewCreated(QRViewController controller) async {
+    if (!mounted) {
+      controller.dispose();
+      return;
+    }
+    _controller = controller;
+    _handledScan = false;
     if (Platform.isAndroid) {
       await controller.pauseCamera();
+      if (!mounted) return;
       await controller.resumeCamera();
+      if (!mounted) return;
     }
 
-    controller.scannedDataStream.listen(
-      (scanData) async {
-        controller.dispose();
-        await Navigator.maybeOf(context)!.maybePop(scanData.code);
-      },
-    );
+    _scanSubscription?.cancel();
+    _scanSubscription = controller.scannedDataStream.listen((scanData) {
+      final value = scanData.code?.trim();
+      if (_handledScan || !mounted || value == null || value.isEmpty) return;
+      // The scanner can emit several frames of the same QR in milliseconds.
+      // Pop exactly ONCE; otherwise subsequent events can pop the Send route.
+      _handledScan = true;
+      _scanSubscription?.cancel();
+      Navigator.of(context).pop(value);
+    });
+  }
+
+  @override
+  void dispose() {
+    _handledScan = true;
+    _scanSubscription?.cancel();
+    _controller?.dispose();
+    super.dispose();
   }
 }

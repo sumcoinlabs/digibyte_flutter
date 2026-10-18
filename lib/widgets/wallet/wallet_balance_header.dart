@@ -15,9 +15,12 @@ class WalletBalanceHeader extends StatelessWidget {
   final BackendConnectionState _connectionState;
   final CoinWallet _wallet;
 
+  final bool compact;
+
   const WalletBalanceHeader(
     this._connectionState,
     this._wallet, {
+    this.compact = false,
     super.key,
   });
 
@@ -215,7 +218,7 @@ class WalletBalanceHeader extends StatelessWidget {
               ),
             ),
 
-          SizedBox(height: bottomGap),
+          SizedBox(height: compact ? 8 : bottomGap),
         ],
       ),
     );

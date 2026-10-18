@@ -258,7 +258,7 @@ class _AddressTabState extends State<AddressTab> {
 
                 if (address.wif.isEmpty) {
                   wif = await context.read<WalletProvider>().getWif(
-                        identifier: _availableCoin.name,
+                        identifier: widget.walletName,
                         address: address.address,
                       );
                 } else {
@@ -640,8 +640,8 @@ class _AddressTabState extends State<AddressTab> {
                               .translate('addressbook_swipe_export'),
                           backgroundColor: Theme.of(context).colorScheme.error,
                           icon: Icons.vpn_key,
-                          onPressed: (ctx) => Auth.requireAuth(
-                            context: ctx,
+                          onPressed: (_) => Auth.requireAuth(
+                            context: context,
                             biometricsAllowed: context
                                 .read<AppSettingsProvider>()
                                 .biometricsAllowed,

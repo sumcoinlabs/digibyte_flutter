@@ -25,18 +25,27 @@ class AvailableCoins {
       txVersion: 1,
       electrumRequiredProtocol: 1.4,
       electrumServers: [
-    //  'ssl://electrum1.cipig.net:20059',
-    //  'ssl://electrum2.cipig.net:20059',
-    //  'ssl://electrum3.cipig.net:20059',
-      'wss://electrum1.cipig.net:30059',
-      'wss://electrum2.cipig.net:30059',
-      'wss://electrum3.cipig.net:30059',
+        // Primary DigiByte ElectrumX server
+        'wss://dgb1.digibytewallet.org:50004',
+        'ssl://dgb1.digibytewallet.org:50002',
+
+        // DigiByte Cipig WSS fallback servers
+        'wss://electrum1.cipig.net:30059',
+        'wss://electrum2.cipig.net:30059',
+        'wss://electrum3.cipig.net:30059',
+
+        // DigiByte Cipig SSL fallback servers
+        'ssl://electrum1.cipig.net:20059',
+        'ssl://electrum2.cipig.net:20059',
+        'ssl://electrum3.cipig.net:20059',
       ],
       marismaServers: [
         ('marisma.ppc.lol', 8443),
       ],
     ),
-  /*  'peercoinTestnet': Coin(
+
+    /*
+    'peercoinTestnet': Coin(
       name: 'peercoinTestnet',
       displayName: 'DigiByte Testnet',
       uriCode: 'digibyte',
@@ -61,7 +70,8 @@ class AvailableCoins {
       marismaServers: [
         ('test-marisma.ppc.lol', 2096),
       ],
-    ), */
+    ),
+    */
   };
 
   static Map<String, Coin> get availableCoins {
@@ -70,6 +80,7 @@ class AvailableCoins {
 
   static Coin getSpecificCoin(String identifier) {
     final coin = identifier.split('_').first;
+
     if (_availableCoinList.containsKey(coin)) {
       return _availableCoinList[coin]!;
     } else {

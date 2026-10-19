@@ -39,7 +39,7 @@ class WalletScanner {
 
       if (await electrumScanner
               .init(coinName)
-              .timeout(const Duration(seconds: 10)) ==
+              .timeout(const Duration(seconds: 35)) ==
           true) {
         yield WalletScannerStreamReply(
           type: WalletScannerMessageType.scanStarted,

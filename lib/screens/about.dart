@@ -86,7 +86,7 @@ class _AboutScreenState extends State<AboutScreen> {
                       ),
                       TextButton(
                         onPressed: () => _launchURL(
-                          'https://github.com/sumcoinlabs/sumcoin_flutter/blob/main/LICENSE',
+                          'https://github.com/sumcoinlabs/digibyte_flutter/blob/main/LICENSE',
                         ),
                         child: Text(
                           AppLocalizations.instance.translate(
@@ -124,7 +124,7 @@ class _AboutScreenState extends State<AboutScreen> {
                       ),
                       TextButton(
                         onPressed: () => _launchURL(
-                          'https://github.com/sumcoinlabs/sumcoin_flutter',
+                          'https://github.com/sumcoinlabs/digibyte_flutter',
                         ),
                         child: Text(
                           AppLocalizations.instance.translate(
@@ -142,7 +142,7 @@ class _AboutScreenState extends State<AboutScreen> {
                       ),
                       TextButton(
                         onPressed: () => _launchURL(
-                          'https://github.com/sumcoinlabs/sumcoin_flutter/blob/main/data_protection.md',
+                          'https://github.com/sumcoinlabs/digibyte_flutter/blob/main/data_protection.md',
                         ),
                         child: Text(
                           AppLocalizations.instance.translate(
@@ -175,7 +175,7 @@ class _AboutScreenState extends State<AboutScreen> {
                                     arguments: {
                                       'wallet': dgbWallet,
                                       'pushedAddress':
-                                          'D6e83goQvxoNTdgE232CbnpSrH1i6XUB7j',
+                                          'D76NnH9uCFQni3ZpTbZWiiU22BVXHS2xcA',
                                     },
                                   );
                                 },
@@ -240,7 +240,7 @@ class _AboutScreenState extends State<AboutScreen> {
                       ),
                       TextButton(
                         onPressed: () async => _launchURL(
-                          'https://www.sumcoin.org',
+                          'https://digibytewallet.org',
                         ),
                         child: Text(
                           AppLocalizations.instance.translate(

@@ -173,7 +173,7 @@ class _SetupDataFeedsScreenState extends State<SetupDataFeedsScreen> {
               ),
               PeerButton(
                 action: () => _launchURL(
-                  'https://github.com/digibyte/sumcoin_flutter/blob/main/data_protection.md',
+                  'https://github.com/sumcoinlabs/digibyte_flutter/blob/main/data_protection.md',
                 ),
                 text: AppLocalizations.instance
                     .translate('about_data_declaration'),

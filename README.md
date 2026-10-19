@@ -2,8 +2,8 @@
 <a href="https://weblate.sumcoinwallet.org/engage/digibyte-flutter/">
 <img src="https://weblate.sumcoinwallet.org/widgets/digibyte-flutter/-/translations/svg-badge.svg" alt="Translation status" /></a>
 [![Codemagic build status](https://api.codemagic.io/apps/61012a37d885ed7a8c3e8b25/61012a37d885ed7a8c3e8b24/status_badge.svg)](https://codemagic.io/apps/61012a37d885ed7a8c3e8b25/61012a37d885ed7a8c3e8b24/latest_build)
-[![Static analysis and unit tests](https://github.com/sumcoinlabs/sumcoin_flutter/actions/workflows/static_analysis_and_unit_test.yml/badge.svg)](https://github.com/sumcoinlabs/sumcoin_flutter/actions/workflows/static_analysis_and_unit_test.yml)
-[![E2E Tests](https://github.com/sumcoinlabs/sumcoin_flutter/actions/workflows/e2e_tests.yml/badge.svg)](https://github.com/sumcoinlabs/sumcoin_flutter/actions/workflows/e2e_tests.yml)
+[![Static analysis and unit tests](https://github.com/sumcoinlabs/digibyte_flutter/actions/workflows/static_analysis_and_unit_test.yml/badge.svg)](https://github.com/sumcoinlabs/digibyte_flutter/actions/workflows/static_analysis_and_unit_test.yml)
+[![E2E Tests](https://github.com/sumcoinlabs/digibyte_flutter/actions/workflows/e2e_tests.yml/badge.svg)](https://github.com/sumcoinlabs/digibyte_flutter/actions/workflows/e2e_tests.yml)
 
 ![Flutter](https://img.shields.io/badge/Flutter-Mobile%20Wallet-02569B?logo=flutter&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android-lightgrey)

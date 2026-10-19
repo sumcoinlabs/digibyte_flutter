@@ -20,6 +20,7 @@ enum ElectrumServerType { ssl, wss }
 class ElectrumBackend extends DataSource {
   Timer? _pingTimer;
   Timer? _reconnectTimer;
+  Timer? _handshakeTimer;
   StreamSubscription? _offlineSubscription;
   final WalletProvider walletProvider;
   final ServerProvider _servers;
@@ -90,34 +91,61 @@ class ElectrumBackend extends DataSource {
       await connect();
 
       if (_connection != null && _serverType != null) {
-        var stream = _serverType == ElectrumServerType.ssl
-            ? _connection
-            : _connection!.stream;
+        final activeConnection = _connection;
+        final stream = _serverType == ElectrumServerType.ssl
+            ? (_connection as SecureSocket)
+                .cast<List<int>>()
+                .transform(utf8.decoder)
+                .transform(const LineSplitter())
+            : (_connection as WebSocketChannel).stream;
 
         stream.listen(
           (elem) {
+            if (!identical(_connection, activeConnection)) return;
             replyHandler(elem);
           },
           onError: (error) {
+            if (!identical(_connection, activeConnection)) return;
             LoggerWrapper.logError(
               'ElectrumConnection',
               'init',
               error.toString(),
             );
-            _connectionAttempt++;
-            _attemptReconnect();
+            cleanUpOnDone();
+            _attemptReconnect(advanceServer: true);
           },
           onDone: () {
+            if (!identical(_connection, activeConnection)) return;
             cleanUpOnDone();
             LoggerWrapper.logInfo(
               'ElectrumConnection',
               'init',
               'connection done',
             );
-            _attemptReconnect();
+            _attemptReconnect(advanceServer: true);
           },
         );
         tryHandShake();
+
+        // TCP/WebSocket connectivity alone is not enough.
+        // The server must complete the Electrum handshake.
+        _handshakeTimer?.cancel();
+        _handshakeTimer = Timer(
+          const Duration(seconds: 12),
+          () async {
+            if (!_closedIntentionally &&
+                connectionState != BackendConnectionState.connected) {
+              LoggerWrapper.logWarn(
+                'ElectrumConnection',
+                'handshake',
+                'Electrum handshake timed out: $_serverUrl',
+              );
+              _attemptReconnect(advanceServer: true);
+              await closeConnection(false);
+            }
+          },
+        );
+
         startPingTimer();
 
         return true;
@@ -174,15 +202,25 @@ class ElectrumBackend extends DataSource {
 
     try {
       if (_serverUrl!.contains('wss://')) {
-        _connection = WebSocketChannel.connect(Uri.parse(_serverUrl!));
+        final channel = WebSocketChannel.connect(Uri.parse(_serverUrl!));
+        try {
+          await channel.ready.timeout(const Duration(seconds: 3));
+        } catch (_) {
+          unawaited(channel.sink.close().catchError((Object _) {}));
+          rethrow;
+        }
+        _connection = channel;
         _serverType = ElectrumServerType.wss;
       } else if (_serverUrl!.contains('ssl://') && !kIsWeb) {
         _serverType = ElectrumServerType.ssl;
         final split = _serverUrl!.split(':');
         final host = split[1].replaceAll('//', '');
         final port = int.parse(split[2]);
-        _connection = await SecureSocket.connect(host, port,
-            timeout: const Duration(seconds: 10));
+        _connection = await SecureSocket.connect(
+          host,
+          port,
+          timeout: const Duration(seconds: 5),
+        );
       } else if (kIsWeb) {
         _connectionAttempt++; // Try next server on web if SSL not supported
         if (_connectionAttempt < _availableServers!.length) {
@@ -192,6 +230,8 @@ class ElectrumBackend extends DataSource {
         }
       }
     } catch (e) {
+      _connection = null;
+      _serverType = null;
       _connectionAttempt++;
       LoggerWrapper.logError(
         'ElectrumConnection',
@@ -206,7 +246,7 @@ class ElectrumBackend extends DataSource {
     }
   }
 
-  void _attemptReconnect() {
+  void _attemptReconnect({bool advanceServer = false}) {
     if (_closedIntentionally) {
       LoggerWrapper.logInfo(
         'ElectrumConnection',
@@ -216,35 +256,33 @@ class ElectrumBackend extends DataSource {
       return;
     }
 
+    // Prevent duplicate onError/onDone events from creating
+    // competing reconnection attempts.
     if (_reconnectTimer?.isActive ?? false) {
-      LoggerWrapper.logInfo(
-        'ElectrumConnection',
-        '_attemptReconnect',
-        'reconnect already scheduled',
-      );
       return;
     }
 
     if (_availableServers == null || _availableServers!.isEmpty) {
       updateConnectionState = BackendConnectionState.offline;
-      LoggerWrapper.logError(
-        'ElectrumConnection',
-        '_attemptReconnect',
-        'no available servers to reconnect to',
-      );
       return;
+    }
+
+    if (advanceServer) {
+      _connectionAttempt++;
     }
 
     if (_connectionAttempt >= _availableServers!.length) {
       _connectionAttempt = 0;
     }
 
+    _handshakeTimer?.cancel();
+    _handshakeTimer = null;
     updateConnectionState = BackendConnectionState.waiting;
 
     LoggerWrapper.logInfo(
       'ElectrumConnection',
       '_attemptReconnect',
-      'scheduling full reconnect attempt $_connectionAttempt',
+      'retrying using server index $_connectionAttempt',
     );
 
     _reconnectTimer = Timer(const Duration(seconds: 2), () async {
@@ -252,11 +290,20 @@ class ElectrumBackend extends DataSource {
       _connection = null;
       _serverType = null;
 
-      await init(
-        coinName,
-        requestedFromWalletHome: true,
-        fromConnectivityChangeOrLifeCycle: true,
-      );
+      try {
+        await init(
+          coinName,
+          requestedFromWalletHome: true,
+          fromConnectivityChangeOrLifeCycle: true,
+        );
+      } catch (e) {
+        LoggerWrapper.logError(
+          'ElectrumConnection',
+          '_attemptReconnect',
+          e.toString(),
+        );
+        _attemptReconnect(advanceServer: true);
+      }
     });
   }
 
@@ -276,10 +323,12 @@ class ElectrumBackend extends DataSource {
       if (_serverType == ElectrumServerType.ssl) {
         _connection.close();
       } else if (_serverType == ElectrumServerType.wss) {
-        await _connection!.sink.close();
+        unawaited(_connection!.sink.close().catchError((Object _) {}));
       }
     }
     if (intentional) {
+      _handshakeTimer?.cancel();
+      _handshakeTimer = null;
       _closedIntentionally = true;
       _connectionAttempt = 0;
       if (_reconnectTimer != null) _reconnectTimer!.cancel();
@@ -297,6 +346,8 @@ class ElectrumBackend extends DataSource {
   void cleanUpOnDone() {
     _pingTimer?.cancel();
     _pingTimer = null;
+    _handshakeTimer?.cancel();
+    _handshakeTimer = null;
     updateConnectionState = BackendConnectionState.waiting;
     _connection = null;
     addresses = {};
@@ -310,13 +361,6 @@ class ElectrumBackend extends DataSource {
       'cleanUpOnDone',
       'cleaned up (intentional $_closedIntentionally)',
     );
-
-    if (!_closedIntentionally) {
-      _reconnectTimer = Timer(
-        const Duration(seconds: 5),
-        () => init(coinName),
-      );
-    }
   }
 
   void replyHandler(dynamic reply) {
@@ -378,7 +422,7 @@ class ElectrumBackend extends DataSource {
     );
     if (_connection != null && _serverType != null) {
       if (_serverType == ElectrumServerType.ssl) {
-        _connection.add(utf8.encode(encodedMessage + '\n'));
+        _connection.add(utf8.encode('$encodedMessage\n'));
       } else if (_serverType == ElectrumServerType.wss &&
           _connection.sink != null) {
         try {
@@ -414,6 +458,8 @@ class ElectrumBackend extends DataSource {
   void handleFeatures(Map result) {
     if (result['genesis_hash'] ==
         AvailableCoins.getSpecificCoin(coinName).genesisHash) {
+      _handshakeTimer?.cancel();
+      _handshakeTimer = null;
       updateConnectionState = BackendConnectionState.connected;
       sendMessage('blockchain.headers.subscribe', 'blocks');
     } else {
@@ -581,11 +627,11 @@ class ElectrumBackend extends DataSource {
         : '';
   }
 
-  @override
   void dispose() {
     _listenerNotifier.close();
     _pingTimer?.cancel();
     _reconnectTimer?.cancel();
+    _handshakeTimer?.cancel();
     _cancelSubscriptionAndCleanup();
     closeConnection(true);
     // Removed super.dispose() since DataSource doesn't define it

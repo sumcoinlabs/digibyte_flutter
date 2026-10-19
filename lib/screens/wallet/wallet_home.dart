@@ -191,10 +191,20 @@ class _WalletHomeState extends State<WalletHomeScreen>
     await _walletProvider.generateUnusedAddress(_wallet.name);
     _walletTransactions =
         await _walletProvider.getWalletTransactions(_wallet.name);
-    await _connectionProvider.init(
-      _wallet.name,
-      requestedFromWalletHome: true,
-    );
+    try {
+      await _connectionProvider
+          .init(
+            _wallet.name,
+            requestedFromWalletHome: true,
+          )
+          .timeout(const Duration(seconds: 12));
+    } catch (error) {
+      LoggerWrapper.logWarn(
+        'WalletHome',
+        '_performInit',
+        'Electrum connection pending: $error',
+      );
+    }
     await _snapshotRecentTransactionPrices();
 
     if (_appSettings.authenticationOptions!['walletHome']!) {

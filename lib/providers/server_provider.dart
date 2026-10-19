@@ -25,6 +25,10 @@ class ServerProvider with ChangeNotifier {
     final seedServers =
         AvailableCoins.getSpecificCoin(identifier).electrumServers;
 
+    // Existing wallets may have older server priorities.
+    // Reconcile built-in priorities on every initialization.
+    // User-added servers remain available afterward.
+
     //check first run
     if (_serverBox.isEmpty) {
       LoggerWrapper.logInfo(
@@ -75,6 +79,31 @@ class ServerProvider with ChangeNotifier {
         }
       }
     }
+    // Make the configured DigiByte servers authoritative for priority.
+    // This also updates wallets that already have a Hive server database.
+    final builtinCount = seedServers.length;
+    final customServers = _serverBox.values
+        .where((server) => server.userGenerated)
+        .toList()
+      ..sort((a, b) => a.priority.compareTo(b.priority));
+
+    for (var index = 0; index < seedServers.length; index++) {
+      final address = seedServers[index];
+      for (final server in _serverBox.values) {
+        if (!server.userGenerated && server.address == address) {
+          if (server.priority != index) {
+            server.setPriority = index;
+          }
+        }
+      }
+    }
+
+    for (var index = 0; index < customServers.length; index++) {
+      final expectedPriority = builtinCount + index;
+      if (customServers[index].priority != expectedPriority) {
+        customServers[index].setPriority = expectedPriority;
+      }
+    }
   }
 
   void addServer(String url, [bool userGenerated = false]) {
@@ -97,26 +126,20 @@ class ServerProvider with ChangeNotifier {
   }
 
   Future<List> getServerList(String coinIdentifier) async {
-    //form list
-    var availableServers = List.generate(
-      _serverBox.values.length,
-      (index) => '',
-    );
-    for (var server in _serverBox.values) {
-      if (server.hidden == false && server.connectable == true) {
-        availableServers.insert(server.priority, server.address);
-      }
-    }
+    final activeServers = _serverBox.values
+        .where((server) => !server.hidden && server.connectable)
+        .toList()
+      ..sort((a, b) => a.priority.compareTo(b.priority));
 
-    final prunedList =
-        availableServers.where((element) => element.isNotEmpty).toList();
+    final addresses = activeServers.map((server) => server.address).toList();
+
     LoggerWrapper.logInfo(
       'Servers',
       'getServerList',
-      'available servers $prunedList',
+      'available servers $addresses',
     );
 
-    return prunedList;
+    return addresses;
   }
 
   Future<List<Server>> getServerDetailsList(String coinIdentifier) async {

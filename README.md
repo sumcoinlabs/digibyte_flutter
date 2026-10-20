@@ -1,6 +1,6 @@
 [![DigiByte Donate](https://badgen.net/badge/digibyte/Donate/green?icon=https://raw.githubusercontent.com/digibyte/media/84710cca6c3c8d2d79676e5260cc8d1cd729a427/DigiByte%202020%20Logo%20Files/01.%20Icon%20Only/Inside%20Circle/Transparent/Green%20Icon/digibyte-icon-green-transparent.svg)](https://sumexplorer.com/address/SiKHm23qe5y4XDkmXE1op9oXbVYax7wrG8)
-<a href="https://weblate.sumcoinwallet.org/engage/digibyte-flutter/">
-<img src="https://weblate.sumcoinwallet.org/widgets/digibyte-flutter/-/translations/svg-badge.svg" alt="Translation status" /></a>
+<a href="https://weblate.digibytewallet.org/engage/digibyte-flutter/">
+<img src="https://weblate.digibytewallet.org/widgets/digibyte-flutter/-/translations/svg-badge.svg" alt="Translation status" /></a>
 
 ![Flutter](https://img.shields.io/badge/Flutter-Mobile%20Wallet-02569B?logo=flutter&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android-lightgrey)
@@ -66,7 +66,7 @@ You can also sign up for open beta testing here:
 
 ---
 
-## Recent Improvements
+## Recent Improvements in 0.1.4
 
 Recent wallet improvements include:
 
@@ -94,7 +94,7 @@ That means:
 - Anyone with access to the seed phrase may be able to access the wallet.
 - Losing the seed phrase may result in permanent loss of funds.
 
-Always back up your wallet seed and store it somewhere safe.
+Always back up your wallet seed ON PAPER - NO PICTURES and store it somewhere safe.
 
 ---
 
@@ -123,7 +123,6 @@ Help translate DigiByte Wallet through Weblate:
 
 This project requires Flutter and the native build tools for the target platform.
 
-**Developer note:** Certain application configuration and source files are intentionally excluded from this repository, including `lib/main.dart`, `lib/firebase_options.dart`, and `lib/tools/project_support.dart`. A fresh checkout requires these files to be supplied before building.
 
 For iOS development (minimum iOS 15.0; tested with Flutter 3.32.8 and Xcode 26.3):
 

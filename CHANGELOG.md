@@ -1,5 +1,9 @@
+### Unreleased
+- Raised minimum supported iOS version to 15.0 for future releases.
+
 ### **0.1.4** (2026-10-18)
 - Updated Electrum connections and viability
+- See percentage changes from tx to tx
 - Cleaned up light and dark mode schemas
 - More precision with rate info refresh every 3 mins
 - Ability to hide Balance for privacy.

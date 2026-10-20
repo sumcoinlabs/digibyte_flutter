@@ -28,8 +28,6 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>
-	<key>io.flutter.embedded_views_preview</key>
-	<true/>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-1492791099222955~4618067475</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
@@ -85,15 +83,13 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-	<!--	<string>UIInterfaceOrientationLandscapeLeft</string> -->
-	<!--	<string>UIInterfaceOrientationLandscapeRight</string> -->
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-	<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>aps-environment</key>
 	<string>development</string>

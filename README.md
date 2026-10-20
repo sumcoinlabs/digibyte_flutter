@@ -1,9 +1,6 @@
 [![DigiByte Donate](https://badgen.net/badge/digibyte/Donate/green?icon=https://raw.githubusercontent.com/digibyte/media/84710cca6c3c8d2d79676e5260cc8d1cd729a427/DigiByte%202020%20Logo%20Files/01.%20Icon%20Only/Inside%20Circle/Transparent/Green%20Icon/digibyte-icon-green-transparent.svg)](https://sumexplorer.com/address/SiKHm23qe5y4XDkmXE1op9oXbVYax7wrG8)
 <a href="https://weblate.sumcoinwallet.org/engage/digibyte-flutter/">
 <img src="https://weblate.sumcoinwallet.org/widgets/digibyte-flutter/-/translations/svg-badge.svg" alt="Translation status" /></a>
-[![Codemagic build status](https://api.codemagic.io/apps/61012a37d885ed7a8c3e8b25/61012a37d885ed7a8c3e8b24/status_badge.svg)](https://codemagic.io/apps/61012a37d885ed7a8c3e8b25/61012a37d885ed7a8c3e8b24/latest_build)
-[![Static analysis and unit tests](https://github.com/sumcoinlabs/digibyte_flutter/actions/workflows/static_analysis_and_unit_test.yml/badge.svg)](https://github.com/sumcoinlabs/digibyte_flutter/actions/workflows/static_analysis_and_unit_test.yml)
-[![E2E Tests](https://github.com/sumcoinlabs/digibyte_flutter/actions/workflows/e2e_tests.yml/badge.svg)](https://github.com/sumcoinlabs/digibyte_flutter/actions/workflows/e2e_tests.yml)
 
 ![Flutter](https://img.shields.io/badge/Flutter-Mobile%20Wallet-02569B?logo=flutter&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android-lightgrey)
@@ -46,17 +43,6 @@ You can also sign up for open beta testing here:
 
 ---
 
-## Screenshots
-
-<p align="center">
-  <img src="screenshots/ios-wallet-home.png" alt="Wallet home" width="220">
-  <img src="screenshots/ios-transaction-details.png" alt="Transaction details" width="220">
-  <img src="screenshots/ios-receive.png" alt="Receive DigiByte" width="220">
-</p>
-
-> Screenshot paths can be updated after adding images to the repository.
-
----
 
 ## Features
 
@@ -93,6 +79,7 @@ Recent wallet improvements include:
 - Balance hide/show privacy control
 - Faster ticker refresh behavior
 - Improved Electrum reconnect handling after idle disconnects
+- Automatic failover between supported ElectrumX servers
 
 ---
 
@@ -123,7 +110,7 @@ Help translate DigiByte Wallet through Weblate:
 
 ## Known Limitations
 
-- Will not mint
+- This is a wallet, not a mining application
 - Requires ElectrumX-compatible backend servers
 - Wallet labels and local metadata may not survive app deletion unless backed up
 - Use at your own risk
@@ -136,7 +123,9 @@ Help translate DigiByte Wallet through Weblate:
 
 This project requires Flutter and the native build tools for the target platform.
 
-For iOS development:
+**Developer note:** Certain application configuration and source files are intentionally excluded from this repository, including `lib/main.dart`, `lib/firebase_options.dart`, and `lib/tools/project_support.dart`. A fresh checkout requires these files to be supplied before building.
+
+For iOS development (minimum iOS 15.0; tested with Flutter 3.32.8 and Xcode 26.3):
 
 ```bash
 flutter doctor
@@ -173,11 +162,6 @@ Run on a specific simulator/device:
 flutter run -d DEVICE_ID --debug
 ```
 
-Example iOS simulator:
-
-```bash
-flutter run -d F1C4A80A-2E41-4FA2-B61C-1B1410E603F9 --debug
-```
 
 Run in release mode on a physical device:
 
@@ -254,7 +238,6 @@ flutter pub global run peanut -b production
 
 Web files are now on the production branch and ready to be deployed.
 
-This will use the HTML renderer by default. Add `--web-renderer canvas` to peanut if you want to switch to the Canvas renderer.
 
 ---
 

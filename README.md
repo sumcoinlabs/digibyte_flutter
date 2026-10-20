@@ -31,7 +31,7 @@ DigiByte Wallet is designed to make it simple to send, receive, and manage DigiB
 </p>
 
 <p align="center">
-  <a href="https://apps.apple.com/app/digibyte-wallet/id1571755170?itsct=apps_box_badge&amp;itscg=30200" style="display: inline-block; overflow: hidden; border-radius: 13px; width: 250px; height: 83px;">
+  <a href="https://apps.apple.com/us/app/digibyte-wallet/id6481703766" style="display: inline-block; overflow: hidden; border-radius: 13px; width: 250px; height: 83px;">
     <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83&amp;releaseDate=1626912000&h=8e86ea0b88a4e8559b76592c43b3fe60" alt="Download on the App Store" style="border-radius: 13px; width: 250px; height: 83px;">
   </a>
 </p>

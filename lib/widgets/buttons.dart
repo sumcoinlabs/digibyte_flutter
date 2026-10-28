@@ -1,7 +1,5 @@
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 
-import '../tools/app_themes.dart';
 
 class PeerButton extends StatelessWidget {
   final Function() action;
@@ -22,20 +20,18 @@ class PeerButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         backgroundColor: Theme.of(context).colorScheme.primary,
-        fixedSize: Size(
+        minimumSize: Size(
           MediaQuery.of(context).size.width > 768
               ? MediaQuery.of(context).size.width / 4
               : MediaQuery.of(context).size.width / 1.5,
-          40,
+          48,
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         elevation: 0,
       ),
       onPressed: action,
-      child: AutoSizeText(
+      child: Text(
         text,
-        minFontSize: 10,
-        maxFontSize: 16,
         textAlign: TextAlign.center,
         style: TextStyle(
           letterSpacing: 1.4,
@@ -59,11 +55,11 @@ class PeerButtonBorder extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         foregroundColor: Theme.of(context).colorScheme.primary,
         backgroundColor: Theme.of(context).colorScheme.surface,
-        fixedSize: Size(
+        minimumSize: Size(
           MediaQuery.of(context).size.width > 768
               ? MediaQuery.of(context).size.width / 4
               : MediaQuery.of(context).size.width / 1.5,
-          40,
+          48,
         ),
         shape: RoundedRectangleBorder(
           //to set border radius to button
@@ -73,15 +69,14 @@ class PeerButtonBorder extends StatelessWidget {
         elevation: 0,
       ),
       onPressed: action,
-      child: FittedBox(
-        child: Text(
+      child: Text(
           text,
+          textAlign: TextAlign.center,
           style: TextStyle(
             letterSpacing: 1.4,
             fontSize: 16,
             color: Theme.of(context).primaryColor,
           ),
-        ),
       ),
     );
   }
@@ -107,11 +102,11 @@ class PeerButtonSetup extends StatelessWidget {
         backgroundColor: active
             ? Theme.of(context).colorScheme.primary
             : Theme.of(context).disabledColor,
-        fixedSize: Size(
+        minimumSize: Size(
           MediaQuery.of(context).size.width > 768
               ? MediaQuery.of(context).size.width / 4
               : MediaQuery.of(context).size.width / 1.5,
-          40,
+          48,
         ),
         shape: RoundedRectangleBorder(
           //to set border radius to button
@@ -119,16 +114,15 @@ class PeerButtonSetup extends StatelessWidget {
         ),
       ),
       onPressed: action,
-      child: FittedBox(
-        child: Text(
+      child: Text(
           text,
+          textAlign: TextAlign.center,
           style: TextStyle(
             letterSpacing: 1.2,
             fontWeight: FontWeight.bold,
             fontSize: 18,
             color: Theme.of(context).colorScheme.onPrimary,
           ),
-        ),
       ),
     );
   }
@@ -152,11 +146,11 @@ class PeerButtonSetupLoading extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         backgroundColor: Theme.of(context).colorScheme.primary,
-        fixedSize: Size(
+        minimumSize: Size(
           MediaQuery.of(context).size.width > 768
               ? MediaQuery.of(context).size.width / 4
               : MediaQuery.of(context).size.width / 1.5,
-          40,
+          48,
         ),
         shape: RoundedRectangleBorder(
           //to set border radius to button
@@ -164,8 +158,7 @@ class PeerButtonSetupLoading extends StatelessWidget {
         ),
       ),
       onPressed: onPressed,
-      child: FittedBox(
-        child: loading
+      child: loading
             ? SizedBox(
                 height: 18,
                 width: 18,
@@ -183,7 +176,6 @@ class PeerButtonSetupLoading extends StatelessWidget {
                   color: Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
-      ),
     );
   }
 

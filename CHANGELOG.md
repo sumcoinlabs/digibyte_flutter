@@ -1,5 +1,8 @@
-### Unreleased
+### **0.1.5** (2026-10-28)
 - Raised minimum supported iOS version to 15.0 for future releases.
+- Improved iOS Keychain handling and wallet startup reliability.
+- Enabled Firebase notification-open analytics on iOS.
+- Set iPad interface orientation to portrait only.
 
 ### **0.1.4** (2026-10-18)
 - Updated Electrum connections and viability

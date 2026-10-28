@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:background_fetch/background_fetch.dart';
@@ -7,13 +7,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:grpc/grpc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:digibyte/models/available_coins.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../generated/marisma.pbgrpc.dart';
 import '../models/hive/app_options.dart';
+import '../providers/encrypted_box_provider.dart';
 import '../models/hive/coin_wallet.dart';
 import '../models/hive/pending_notifications.dart';
 import '../models/hive/server.dart';
@@ -100,14 +100,23 @@ class BackgroundSync {
 
     //this static method can't access the providers we already have so we have to re-invent some things here...
     Uint8List encryptionKey;
-    var secureStorage = const FlutterSecureStorage();
     var flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
-    //check if key exists or return
-    if (await secureStorage.containsKey(key: 'key')) {
-      encryptionKey =
-          base64Url.decode((await secureStorage.read(key: 'key') as String));
-    } else {
+    try {
+      final existingKey = await EncryptedBoxProvider.readStoredEncryptionKey(
+        background: true,
+      );
+      if (existingKey == null) {
+        LoggerWrapper.logWarn('BackgroundSync', 'executeSync',
+            'Existing key unavailable; sync safely skipped');
+        return;
+      }
+      encryptionKey = existingKey;
+      LoggerWrapper.logInfo('BackgroundSync', 'executeSync',
+          'Existing key loaded; background sync proceeding');
+    } catch (e) {
+      LoggerWrapper.logError('BackgroundSync', 'executeSync',
+          'Could not read existing key; sync safely skipped (${e.runtimeType})');
       return;
     }
 

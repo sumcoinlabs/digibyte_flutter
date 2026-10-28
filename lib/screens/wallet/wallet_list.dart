@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_logs/flutter_logs.dart';
+import 'package:flutter/services.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:digibyte/tools/logger_wrapper.dart';
@@ -23,7 +23,6 @@ import '../../tools/app_localizations.dart';
 import '../../tools/app_routes.dart';
 import '../../tools/auth.dart';
 import '../../tools/background_sync.dart';
-import '../../tools/debug_log_handler.dart';
 import '../../tools/periodic_reminders.dart';
 import '../../tools/price_ticker.dart';
 import '../../tools/session_checker.dart';
@@ -32,6 +31,7 @@ import '../../widgets/buttons.dart';
 import '../../widgets/logout_dialog_dummy.dart'
     if (dart.library.html) '../../widgets/logout_dialog.dart';
 import '../../widgets/spinning_digibyte_icon.dart';
+import '../secure_storage_error_screen.dart';
 import '../../widgets/wallet/new_wallet.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -123,19 +123,22 @@ class WalletListScreen extends StatefulWidget {
 class _WalletListScreenState extends State<WalletListScreen>
     with SingleTickerProviderStateMixin {
   bool _initial = true;
+  bool _initializationRunning = false;
+  bool _initializationFailed = false;
   bool _showHiddenWallets = false;
   int _nOfHiddenWallets = 0;
   late bool _importedSeed;
   late WalletProvider _walletProvider;
   late Animation<double> _animation;
   late AnimationController _controller;
-  late Timer _priceTimer;
-  late Timer _sessionTimer;
+  Timer? _priceTimer;
+  Timer? _sessionTimer;
   late AppSettingsProvider _appSettings;
   late List<CoinWallet> _activeWalletsOrdered;
 
   @override
   Widget build(BuildContext context) {
+    if (_initializationFailed) return const SecureStorageFailedScreen();
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
 
@@ -574,134 +577,157 @@ class _WalletListScreenState extends State<WalletListScreen>
   }
 
   @override
-  void didChangeDependencies() async {
-    if (_initial) {
-      _appSettings = Provider.of<AppSettingsProvider>(context);
-      _walletProvider = Provider.of<WalletProvider>(context);
-      final navigator = Navigator.of(context);
-      final modalRoute = ModalRoute.of(context);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _appSettings = Provider.of<AppSettingsProvider>(context);
+    _walletProvider = Provider.of<WalletProvider>(context);
+    if (!_initial) {
+      _orderWallets(); // preserve existing provider-driven list updates
+      return;
+    }
+    if (_initializationRunning) return;
+    _initializationRunning = true;
+    _initializeAndOpen();
+  }
 
+  Future<void> _initializeAndOpen() async {
+    final navigator = Navigator.of(context);
+    final modalRoute = ModalRoute.of(context);
+    var attempts = 0;
+    while (mounted) {
       try {
         await _appSettings.init();
         await _walletProvider.init();
         await _orderWallets();
         final prefs = await SharedPreferences.getInstance();
         _importedSeed = prefs.getBool('importedSeed') == true;
+        if (!mounted) return;
+        LoggerWrapper.logInfo('WalletListScreen', 'init',
+            'Settings and encrypted wallets initialized successfully');
+        setState(() => _initial = false);
+        break;
+      } on PlatformException catch (e) {
+        LoggerWrapper.logError('WalletListScreen', 'init',
+            'Startup platform error: code=${e.code}; status=${e.details}');
+        final protectedKeychain = e.toString().contains('-25308');
+        if (!protectedKeychain) {
+          if (mounted) setState(() => _initializationFailed = true);
+          return;
+        }
+        attempts++;
+        final delay = attempts < 3 ? attempts : 5;
+        LoggerWrapper.logWarn('WalletListScreen', 'init',
+            'Keychain temporarily unavailable; automatic retry #$attempts in ${delay}s');
+        await Future<void>.delayed(Duration(seconds: delay));
       } catch (e) {
-        await _handleInitError(e);
-      } finally {
-        setState(() {
-          _initial = false;
-        });
+        LoggerWrapper.logError('WalletListScreen', 'init',
+            'Wallet initialization failed: ${e.runtimeType}');
+        if (mounted) setState(() => _initializationFailed = true);
+        return;
       }
+    }
+    if (!mounted) return;
 
-      // Price ticker
-      if (_appSettings.selectedCurrency.isNotEmpty) {
-        PriceTicker.checkUpdate(_appSettings);
-        _priceTimer = Timer.periodic(
-          const Duration(hours: 1),
-          (_) {
-            PriceTicker.checkUpdate(_appSettings);
-          },
-        );
+    // Price ticker
+    if (_appSettings.selectedCurrency.isNotEmpty) {
+      PriceTicker.checkUpdate(_appSettings);
+      _priceTimer = Timer.periodic(
+        const Duration(hours: 1),
+        (_) {
+          PriceTicker.checkUpdate(_appSettings);
+        },
+      );
+    }
+
+    if (!kIsWeb) {
+      _triggerChangeLogCheck(navigator, _appSettings.buildIdentifier);
+
+      // Periodic reminders
+      if (_activeWalletsOrdered.isNotEmpty) {
+        if (await _checkReminder() == true) {
+          return;
+        }
       }
-
-      if (!kIsWeb) {
-        _triggerChangeLogCheck(navigator, _appSettings.buildIdentifier);
-
-        // Periodic reminders
-        if (_activeWalletsOrdered.isNotEmpty) {
-          if (await _checkReminder() == true) {
-            return;
-          }
-        }
-      } else {
-        _sessionTimer = Timer.periodic(
-          const Duration(minutes: 10),
-          (timer) async {
-            if (await checkSessionExpired()) {
-              if (mounted) {
-                Navigator.of(context).pop();
-              }
-              LogoutDialog.reloadWindow();
-            }
-          },
-        );
-      }
-
-      var fromScan = false;
-      if (modalRoute?.settings.arguments != null) {
-        var map = modalRoute!.settings.arguments as Map;
-        fromScan = map['fromScan'] ?? false;
-      }
-      if (widget.fromColdStart == true &&
-          _appSettings.authenticationOptions!['walletList']!) {
-        if (mounted) {
-          await Auth.requireAuth(
-            context: context,
-            biometricsAllowed: _appSettings.biometricsAllowed,
-            canCancel: false,
-          );
-        }
-      } else if (fromScan == false) {
-        // Background tasks
-        if (_appSettings.notificationInterval > 0) {
-          await BackgroundSync.init(
-            notificationInterval: _appSettings.notificationInterval,
-          );
-        }
-
-        // find default wallet
-        CoinWallet? defaultWallet;
-        if (widget.walletToOpenDirectly.isNotEmpty) {
-          defaultWallet = _activeWalletsOrdered.firstWhereOrNull(
-            (elem) => elem.name == widget.walletToOpenDirectly,
-          );
-        } else {
-          defaultWallet = _activeWalletsOrdered.firstWhereOrNull(
-            (elem) => elem.letterCode == _appSettings.defaultWallet,
-          );
-        }
-
-        if (_activeWalletsOrdered.length == 1 &&
-            widget.walletToOpenDirectly.isEmpty) {
-          if (!kIsWeb) {
+    } else {
+      _sessionTimer = Timer.periodic(
+        const Duration(minutes: 10),
+        (timer) async {
+          if (await checkSessionExpired()) {
             if (mounted) {
-              context.loaderOverlay.show();
+              Navigator.of(context).pop();
             }
+            LogoutDialog.reloadWindow();
+          }
+        },
+      );
+    }
+
+    var fromScan = false;
+    if (modalRoute?.settings.arguments != null) {
+      var map = modalRoute!.settings.arguments as Map;
+      fromScan = map['fromScan'] ?? false;
+    }
+    if (widget.fromColdStart == true &&
+        _appSettings.authenticationOptions!['walletList']!) {
+      if (mounted) {
+        await Auth.requireAuth(
+          context: context,
+          biometricsAllowed: _appSettings.biometricsAllowed,
+          canCancel: false,
+        );
+      }
+    } else if (fromScan == false) {
+      // Background tasks
+      if (_appSettings.notificationInterval > 0) {
+        await BackgroundSync.init(
+          notificationInterval: _appSettings.notificationInterval,
+        );
+      }
+
+      // find default wallet
+      CoinWallet? defaultWallet;
+      if (widget.walletToOpenDirectly.isNotEmpty) {
+        defaultWallet = _activeWalletsOrdered.firstWhereOrNull(
+          (elem) => elem.name == widget.walletToOpenDirectly,
+        );
+      } else {
+        defaultWallet = _activeWalletsOrdered.firstWhereOrNull(
+          (elem) => elem.letterCode == _appSettings.defaultWallet,
+        );
+      }
+
+      if (_activeWalletsOrdered.length == 1 &&
+          widget.walletToOpenDirectly.isEmpty) {
+        if (!kIsWeb) {
+          if (mounted) {
+            context.loaderOverlay.show();
+          }
+          await navigator.pushNamed(
+            Routes.walletHome,
+            arguments: {'wallet': _activeWalletsOrdered.first},
+          );
+        }
+      } else if (_activeWalletsOrdered.length > 1 ||
+          widget.walletToOpenDirectly.isNotEmpty) {
+        if (defaultWallet != null) {
+          if (mounted) {
+            context.loaderOverlay.show();
+          }
+          if (!kIsWeb) {
             await navigator.pushNamed(
               Routes.walletHome,
-              arguments: {'wallet': _activeWalletsOrdered.first},
+              arguments: {'wallet': defaultWallet},
             );
-          }
-        } else if (_activeWalletsOrdered.length > 1 ||
-            widget.walletToOpenDirectly.isNotEmpty) {
-          if (defaultWallet != null) {
-            if (mounted) {
-              context.loaderOverlay.show();
-            }
-            if (!kIsWeb) {
-              await navigator.pushNamed(
-                Routes.walletHome,
-                arguments: {'wallet': defaultWallet},
-              );
-            }
           }
         }
       }
     }
-    await _orderWallets();
-    super.didChangeDependencies();
   }
 
   @override
   void dispose() {
-    if (_appSettings.selectedCurrency.isNotEmpty) {
-      _priceTimer.cancel();
-    }
-    if (kIsWeb) {
-      _sessionTimer.cancel();
-    }
+    _priceTimer?.cancel();
+    _sessionTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -719,28 +745,6 @@ class _WalletListScreenState extends State<WalletListScreen>
 
   Future<bool> _checkReminder() async {
     return await PeriodicReminders.checkReminder(_appSettings, context);
-  }
-
-  Future<void> _handleInitError(Object e) async {
-    LoggerWrapper.logError(
-      'WalletListScreen',
-      'didChangeDependencies',
-      e.toString(),
-    );
-    await initDebugLogHandler();
-    FlutterLogs.exportLogs();
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.instance.translate('secure_storage_app_bar_title'),
-            textAlign: TextAlign.center,
-          ),
-          duration: const Duration(seconds: 5),
-        ),
-      );
-    }
   }
 
   Future<void> _orderWallets() async {

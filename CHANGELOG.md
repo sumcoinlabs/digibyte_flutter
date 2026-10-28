@@ -3,6 +3,8 @@
 - Improved iOS Keychain handling and wallet startup reliability.
 - Enabled Firebase notification-open analytics on iOS.
 - Set iPad interface orientation to portrait only.
+- Screen Scaling improvements on large font settings.
+- Banner ads now use screen space only when an ad is available.
 
 ### **0.1.4** (2026-10-18)
 - Updated Electrum connections and viability

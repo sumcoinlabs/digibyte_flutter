@@ -20,6 +20,7 @@ class BannerAdWidget extends StatefulWidget {
 
 class _BannerAdWidgetState extends State<BannerAdWidget> {
   BannerAd? _bannerAd;
+  bool _adLoaded = false;
 
   @override
   void initState() {
@@ -37,14 +38,24 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     String adUnitId = getAdUnitId();
 
     _bannerAd = BannerAd(
-      size: AdSize.fullBanner,
+      size: AdSize.banner,
       adUnitId: adUnitId,
       request: const AdRequest(),
       listener: BannerAdListener(
-        onAdLoaded: (_) => setState(() {}),
+        onAdLoaded: (_) {
+          if (mounted) setState(() => _adLoaded = true);
+        },
         onAdFailedToLoad: (ad, error) {
           print('Ad failed to load: $error');
           ad.dispose();
+          if (mounted) {
+            setState(() {
+              _bannerAd = null;
+              _adLoaded = false;
+            });
+          } else {
+            _bannerAd = null;
+          }
         },
       ),
     );
@@ -62,13 +73,18 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_adLoaded || _bannerAd == null) return const SizedBox.shrink();
     return Padding(
       padding: widget.padding,
-      child: _bannerAd == null ? const SizedBox.shrink() : Container(
+      child: Container(
         width: widget.width,
         height: widget.height,
         alignment: Alignment.center,
-        child: AdWidget(ad: _bannerAd!),
+        child: SizedBox(
+          width: _bannerAd!.size.width.toDouble(),
+          height: _bannerAd!.size.height.toDouble(),
+          child: AdWidget(ad: _bannerAd!),
+        ),
       ),
     );
   }

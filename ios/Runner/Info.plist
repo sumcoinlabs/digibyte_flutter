@@ -27,7 +27,7 @@
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>FirebaseAppDelegateProxyEnabled</key>
-	<false/>
+	<true/>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-1492791099222955~4618067475</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

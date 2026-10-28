@@ -260,8 +260,9 @@ class _WalletListScreenState extends State<WalletListScreen>
                         // Show either "no wallets" or the list
                         _activeWalletsOrdered.isEmpty
                             ? Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
                                       AppLocalizations.instance.translate(
@@ -299,7 +300,8 @@ class _WalletListScreenState extends State<WalletListScreen>
                                     ),
                                   ],
                                 ),
-                              )
+                              ),
+                            )
                             : Expanded(
                                 child: SizedBox(
                                   width: MediaQuery.of(context).size.width >
@@ -459,12 +461,7 @@ class _WalletListScreenState extends State<WalletListScreen>
                           ),
                         ), */
 
-                        const SizedBox(height: 20),
-                        // Banner ad widget (remove "const")
-                        SizedBox(
-                          height: 60, // adjust if needed
-                          child: BannerAdWidget(), // no const
-                        ),
+                        BannerAdWidget(),
                       ],
                     ),
                   ),

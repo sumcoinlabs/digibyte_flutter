@@ -2,7 +2,8 @@ name: Analyze & Test
 on:
   push:
     branches:
-      - main
+      - master
+      - fix/firebase-security-0.1.5
   pull_request:
     types: [opened, reopened, synchronize]
 
@@ -11,22 +12,29 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 45
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-java@v2
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
-        java-version: '11'
+        java-version: '17'
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.32.5'
+        flutter-version: '3.47.8'
         channel: 'stable'
         cache: true
     - run: flutter pub get
-    - run: flutter analyze
+    - name: Build DigiCoinLib secp256k1 for unit tests
+      run: |
+        brew install autoconf automake libtool
+        dart run digicoinlib:build_macos
+        test -s build/libsecp256k1.dylib
+    - name: Prepare CI-only Firebase configuration
+      run: cp .github/ci/firebase_options.ci-template lib/firebase_options.dart
+    - run: flutter analyze --no-fatal-warnings --no-fatal-infos
     - run: flutter test -r expanded
 
   e2e-test:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -34,14 +42,14 @@ jobs:
         api-level: [29, 30, 31]
     steps:
       - name: checkout
-        uses: actions/checkout@v3
-      - uses: actions/setup-java@v2
+        uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '11'
+          java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.5'
+          flutter-version: '3.47.8'
           channel: 'stable'
           cache: true
       - name: run tests

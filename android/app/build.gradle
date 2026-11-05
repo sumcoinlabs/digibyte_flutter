@@ -39,8 +39,8 @@ if (keystorePropertiesFile.exists()) {
 //apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
-    compileSdkVersion 35
-    ndkVersion "27.2.12479018"
+    compileSdkVersion 36
+    ndkVersion "28.2.13676358"
     namespace "org.digibytewallet"
 
     sourceSets {
@@ -54,7 +54,7 @@ android {
     defaultConfig {
         applicationId "org.digibytewallet"
         minSdkVersion 26
-        targetSdkVersion 35
+        targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
@@ -74,10 +74,18 @@ android {
 
     signingConfigs {
         release {
-            keyAlias 'sumcoin_wallet'
-            keyPassword '01UwN78092i83$'
-            storeFile file('../sumcoin_wallet.jks')
-            storePassword '01UwN78092i83$'
+            if (keystorePropertiesFile.exists()) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            } else if (gradle.startParameter.taskNames.any {
+                it.toLowerCase().contains('release')
+            }) {
+                throw new GradleException(
+                    'Release signing requires android/key.properties'
+                )
+            }
         }
     }
 

@@ -1,394 +1,420 @@
-import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:digicoinlib_flutter/digicoinlib_flutter.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:hive/hive.dart';
-import 'package:mockito/mockito.dart';
-import 'package:digibyte/exceptions/exceptions.dart';
+import 'package:digibyte/models/available_coins.dart';
 import 'package:digibyte/models/hive/coin_wallet.dart';
 import 'package:digibyte/models/hive/wallet_address.dart';
 import 'package:digibyte/models/hive/wallet_transaction.dart';
 import 'package:digibyte/models/hive/wallet_utxo.dart';
-import 'package:digibyte/providers/wallet_provider.dart';
 import 'package:digibyte/providers/encrypted_box_provider.dart';
-import 'package:fast_csv/fast_csv.dart' as fast_csv;
+import 'package:digibyte/providers/wallet_provider.dart';
+import 'package:digibyte/tools/project_support.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:hive/hive.dart';
 
-class MockHiveBox extends Mock implements EncryptedBoxProvider {
-  @override
-  Future<Uint8List?> get key async {
-    return Uint8List(32);
-  }
+class TestEncryptedBoxes extends EncryptedBoxProvider {
+  final Uint8List testKey;
 
-  @override
-  Future<Box?> getGenericBox(String name) async {
-    return await Hive.openBox(name);
-  }
+  TestEncryptedBoxes(this.testKey);
 
   @override
-  Future<Box<CoinWallet>> getWalletBox() async {
-    return await Hive.openBox<CoinWallet>(
-      'wallets',
-    );
-  }
+  Future<Box?> getGenericBox(String name) =>
+      Hive.openBox(
+        name,
+        encryptionCipher: HiveAesCipher(testKey),
+      );
+
+  @override
+  Future<Box<CoinWallet>> getWalletBox() =>
+      Hive.openBox<CoinWallet>(
+        'wallets',
+        encryptionCipher: HiveAesCipher(testKey),
+      );
 }
 
-void main() async {
-  const walletName = 'digibyte';
-  const testnetWalletName = 'peercoinTestnet';
-
-  //init digicoinlib
-  await loadDigiCoinlib();
-
-  final WalletProvider wallet = WalletProvider(MockHiveBox());
+void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  final decimalProduct = pow(
-    10,
-    6,
-  ).toInt();
+  const identifier = 'digibyte';
+  const mnemonic =
+      'abandon abandon abandon abandon abandon abandon '
+      'abandon abandon abandon abandon abandon about';
+
+  const txHash =
+      '11223344556677889900aabbccddeeff'
+      '00112233445566778899aabbccddeeff';
+
+  const baseFunding = 200000000;
+
+  final key = Uint8List.fromList(
+    List<int>.generate(32, (i) => i + 1),
+  );
+
+  late Directory testDirectory;
+  late WalletProvider wallet;
+  late String ownAddress;
+
+  int supportAmount() =>
+      ProjectSupport.enabledFor('DGB')
+          ? ProjectSupport.amount
+          : 0;
+
+  String recipientAddress(int index) {
+    final privateKey = ECPrivateKey.fromHex(
+      index.toRadixString(16).padLeft(64, '0'),
+    );
+
+    return P2PKHAddress.fromPublicKey(
+      privateKey.pubkey,
+      version: Network.mainnet.p2pkhPrefix,
+    ).toString();
+  }
+
+  BigInt outputValue(Transaction tx, String address) {
+    final targetScript = bytesToHex(
+      Address.fromString(
+        address,
+        Network.mainnet,
+      ).program.script.compiled,
+    );
+
+    return tx.outputs
+        .where(
+          (output) =>
+              bytesToHex(output.scriptPubKey) == targetScript,
+        )
+        .fold<BigInt>(
+          BigInt.zero,
+          (total, output) => total + output.value,
+        );
+  }
+
+  void expectSigned(Transaction tx) {
+    expect(tx.version, 1);
+    expect(tx.complete, isTrue);
+
+    for (var i = 0; i < tx.inputs.length; i++) {
+      final input = tx.inputs[i] as P2PKHInput;
+      final signature = input.insig!;
+
+      final hash = LegacySignatureHasher(
+        tx: tx,
+        inputN: i,
+        scriptCode: input.scriptCode,
+        hashType: signature.hashType,
+      ).hash;
+
+      expect(
+        signature.signature.verify(input.publicKey, hash),
+        isTrue,
+      );
+    }
+  }
+
+  void expectConservation(
+    Transaction tx,
+    int inputValue,
+    int fee,
+  ) {
+    final outputTotal = tx.outputs.fold<BigInt>(
+      BigInt.zero,
+      (total, output) => total + output.value,
+    );
+
+    expect(
+      outputTotal + BigInt.from(fee),
+      BigInt.from(inputValue),
+      reason: 'Inputs must equal outputs plus the network fee',
+    );
+  }
 
   setUpAll(() async {
-    Hive.init('test');
+    await loadDigiCoinlib();
+
+    testDirectory = Directory(
+      'build/digibyte-transaction-regression-'
+      '${DateTime.now().microsecondsSinceEpoch}',
+    );
+
+    await testDirectory.create(recursive: true);
+    Hive.init(testDirectory.path);
+
     Hive.registerAdapter(CoinWalletAdapter());
-    Hive.registerAdapter(WalletTransactionAdapter());
     Hive.registerAdapter(WalletAddressAdapter());
+    Hive.registerAdapter(WalletTransactionAdapter());
     Hive.registerAdapter(WalletUtxoAdapter());
+
+    wallet = WalletProvider(TestEncryptedBoxes(key));
+
     await wallet.init();
-    wallet.addWallet(
-      name: walletName,
-      title: walletName,
+    await wallet.createPhrase(mnemonic);
+
+    await wallet.addWallet(
+      name: identifier,
+      title: 'DigiByte',
       letterCode: 'DGB',
       isImportedSeed: false,
       watchOnly: false,
     );
-    wallet.addWallet(
-      name: testnetWalletName,
-      title: testnetWalletName,
-      letterCode: 'tDGB',
-      isImportedSeed: false,
-      watchOnly: false,
+
+    await wallet.generateUnusedAddress(identifier);
+    ownAddress = wallet.getUnusedAddress(identifier);
+
+    expect(ownAddress, isNotEmpty);
+  });
+
+  setUp(() async {
+    // Each test receives a fresh synthetic confirmed UTXO.
+    // This never accesses an actual blockchain or wallet.
+    await wallet.putUtxos(
+      identifier: identifier,
+      address: ownAddress,
+      utxos: [
+        {
+          'tx_hash': txHash,
+          'tx_pos': 0,
+          'height': 200000,
+          'value': baseFunding + supportAmount(),
+        },
+      ],
     );
   });
 
   tearDownAll(() async {
-    File('test/vaultbox.hive').delete();
-    File('test/vaultbox.lock').delete();
-    File('test/wallets.hive').delete();
-    File('test/wallets.lock').delete();
+    await Hive.close();
+
+    // Delete only the unique directory created by this test.
+    if (await testDirectory.exists()) {
+      await testDirectory.delete(recursive: true);
+    }
   });
 
-  group(
-    'mainnet',
-    () {
-      test(
-        'Generate unused mainnet address',
-        () async {
-          await wallet.generateUnusedAddress(walletName);
-          assert(
-            wallet.getUnusedAddress(walletName) ==
-                'PXDR4KZn2WdTocNx1GPJXR96PfzZBvWqKQ',
-          );
-        },
+  test('DigiByte mainnet monetary and transaction parameters', () {
+    final coin = AvailableCoins.getSpecificCoin(identifier);
+
+    expect(coin.letterCode, 'DGB');
+    expect(coin.fractions, 8);
+    expect(coin.txVersion, 1);
+    expect(
+      AvailableCoins.getDecimalProduct(
+        identifier: identifier,
+      ),
+      100000000,
+    );
+    expect(coin.minimumTxValue, 10000);
+  });
+
+  test('Confirmed UTXO updates spendable balance', () async {
+    final utxos = await wallet.getWalletUtxos(identifier);
+    final coinWallet = wallet.getSpecificCoinWallet(identifier);
+
+    expect(utxos.length, 1);
+    expect(utxos.single.address, ownAddress);
+    expect(utxos.single.height, greaterThan(0));
+    expect(
+      coinWallet.balance,
+      baseFunding + supportAmount(),
+    );
+  });
+
+  test('Partial payment produces signed transaction and change', () async {
+    final destination = recipientAddress(2);
+    const payment = 25000000;
+
+    final result = await wallet.buildTransaction(
+      identifier: identifier,
+      fee: 0,
+      recipients: {destination: payment},
+    );
+
+    final tx = Transaction.fromHex(result.hex);
+
+    expectSigned(tx);
+
+    expect(result.id, tx.txid);
+    expect(result.neededChange, isTrue);
+    expect(result.fee, greaterThan(0));
+    expect(result.totalAmount, payment);
+    expect(result.recipients[destination], payment);
+
+    expect(
+      outputValue(tx, destination),
+      BigInt.from(payment),
+    );
+
+    expect(
+      outputValue(tx, ownAddress),
+      greaterThan(BigInt.zero),
+    );
+
+    expect(result.projectSupport, supportAmount());
+
+    if (supportAmount() > 0) {
+      expect(
+        outputValue(tx, ProjectSupport.address),
+        BigInt.from(supportAmount()),
       );
+    }
 
-      test(
-        'Add mainnet utxo',
-        () async {
-          await wallet.putUtxos(
-            identifier: walletName,
-            address: wallet.getUnusedAddress(walletName),
-            utxos: [
-              {
-                'tx_hash':
-                    '6c0e78d2a2bdc8777e2bb9c30cd25b58a1fb18c7ca55b89a1e179c288da99efd',
-                'tx_pos': 1,
-                'height': 99,
-                'value': 138139, //test output of 0.138139
-              }
-            ],
-          );
+    expectConservation(
+      tx,
+      baseFunding + supportAmount(),
+      result.fee,
+    );
+  });
 
-          final getUtxos = await wallet.getWalletUtxos(walletName);
-          assert(getUtxos.length == 1);
-          assert(getUtxos[0].runtimeType == WalletUtxo);
-          assert(getUtxos[0].address == wallet.getUnusedAddress(walletName));
-        },
+  test('Send-max deducts network fee from user payment', () async {
+    final destination = recipientAddress(3);
+
+    final result = await wallet.buildTransaction(
+      identifier: identifier,
+      fee: 0,
+      recipients: {destination: baseFunding},
+    );
+
+    final tx = Transaction.fromHex(result.hex);
+
+    expectSigned(tx);
+
+    expect(result.neededChange, isFalse);
+    expect(result.feesHaveBeenDeductedFromRecipient, isTrue);
+    expect(result.fee, greaterThan(0));
+
+    final expectedPayment = baseFunding - result.fee;
+
+    expect(result.recipients[destination], expectedPayment);
+    expect(result.totalAmount, expectedPayment);
+
+    expect(
+      outputValue(tx, destination),
+      BigInt.from(expectedPayment),
+    );
+
+    expect(result.projectSupport, supportAmount());
+
+    if (supportAmount() > 0) {
+      expect(
+        outputValue(tx, ProjectSupport.address),
+        BigInt.from(supportAmount()),
       );
+    }
 
-      test('Build transaction, spend 100% of wallet balance', () async {
-        final result = await wallet.buildTransaction(
-          identifier: walletName,
-          fee: 0,
-          recipients: {
-            'p92W3t7YkKfQEPDb7cG9jQ6iMh7cpKLvwK': 138139,
-          },
-        );
-        assert(result.feesHaveBeenDeductedFromRecipient == true);
-        assert(
-          result.hex ==
-              '0300000001fd9ea98d289c171e9ab855cac718fba1585bd20cc3b92b7e77c8bda2d2780e6c010000006a4730440220166f0bcbfac940bf280ab88a804574bbc49f6629ecbe1852a7a4aa7ad3da9a31022012dd79b7ea62b79bf581253522476a6ee7fb944a6334fb34462f8d3b363013140121022036646b3fd79dee41351f727f0a6e10d0e7f98585961bc14e7aadaf5f4b66abffffffff01391402000000000017a91426308eea0cfcbe5bc51a5d28f297b92842db43578700000000',
-        );
-      });
+    expectConservation(
+      tx,
+      baseFunding + supportAmount(),
+      result.fee,
+    );
+  });
 
-      test('Build transaction, spend ~50% of wallet balance, with change',
-          () async {
-        final result = await wallet.buildTransaction(
-          identifier: walletName,
-          fee: 0,
-          recipients: {
-            'p92W3t7YkKfQEPDb7cG9jQ6iMh7cpKLvwK': 69069,
-          },
-        );
-        assert(
-          result.hex ==
-              '0300000001fd9ea98d289c171e9ab855cac718fba1585bd20cc3b92b7e77c8bda2d2780e6c010000006a473044022057df35cb499de4719fbf5d46291daf89aef0f9f2dde20597305cba276cbb54ad02205cec9803aa8df586312d9bf704278ff4b01b8fc3e284b10097137be554d809aa0121022036646b3fd79dee41351f727f0a6e10d0e7f98585961bc14e7aadaf5f4b66abffffffff0218050100000000001976a914f82d58dd8487044d8d0879c15a2a3516a425de2a88accd0d01000000000017a91426308eea0cfcbe5bc51a5d28f297b92842db43578700000000',
-        );
-      });
+  test('Multiple recipients and OP_RETURN are preserved', () async {
+    final first = recipientAddress(4);
+    final second = recipientAddress(5);
+    final third = recipientAddress(6);
 
-      test(
-          'Build transaction, spend 100% of wallet balance, with fees deducted from last recipient',
-          () async {
-        final result = await wallet.buildTransaction(
-          identifier: walletName,
-          fee: 0,
-          recipients: {
-            'pc1qcanvas0000000000000000000000000000000000000qyscr6u9qpr7jag':
-                10000,
-            'pc1qcanvas0000000000000000000000000000000000000qy3qr6c9q6sv68g':
-                10000,
-            'pc1qcanvas0000000000000000000000000000000000000qy3gr659qfnjsyr':
-                10000,
-            'pc1qcanvas0000000000000000000000000000000000000qy3sr659q5hf3ej':
-                10000,
-            'pc1qcanvas0000000000000000000000000000000000000qy3cr6c9q85hm6e':
-                10000,
-            'pc1qcanvas0000000000000000000000000000000000000qyjqr6u9qqsdaed':
-                10000,
-            'pc1qcanvas0000000000000000000000000000000000000qy3qrmq9qj9adud':
-                10000,
-            'pc1qcanvas0000000000000000000000000000000000000qy3crmq9q0pxvpu':
-                10000,
-            'pc1qcanvas0000000000000000000000000000000000000qy3srmy9qvjz64g':
-                10000,
-            'pc1qcanvas0000000000000000000000000000000000000qy3grmy9q3kemge':
-                10000,
-            'pc1qcanvas0000000000000000000000000000000000000qy3sr6u9qy8ndwd':
-                10000,
-            'pc1qcanvas0000000000000000000000000000000000000qy3gr6u9qergvnu':
-                10000,
-            'pc1qcanvas0000000000000000000000000000000000000qy3gr6c9q3t9zv8':
-                18000,
-          },
-        );
-        assert(result.feesHaveBeenDeductedFromRecipient == true);
-        assert(
-          result.hex ==
-              '0300000001fd9ea98d289c171e9ab855cac718fba1585bd20cc3b92b7e77c8bda2d2780e6c010000006a473044022040ef9009ab2843bc66c7ae09b23b7b23a0f7d62cf990da0f2b45257ecc810a1e02200862f8b6a880bb65a0f140e0eaadda11e090d826abe0fc80454461bfbc4cb0010121022036646b3fd79dee41351f727f0a6e10d0e7f98585961bc14e7aadaf5f4b66abffffffff0d1027000000000000220020c766cec1ef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bde024303d70a1027000000000000220020c766cec1ef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bde024403d60a1027000000000000220020c766cec1ef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bde024503d50a1027000000000000220020c766cec1ef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bde024603d50a1027000000000000220020c766cec1ef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bde024703d60a1027000000000000220020c766cec1ef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bde024803d70a1027000000000000220020c766cec1ef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bde024403d80a1027000000000000220020c766cec1ef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bde024703d80a1027000000000000220020c766cec1ef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bde024603d90a1027000000000000220020c766cec1ef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bde024503d90a1027000000000000220020c766cec1ef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bde024603d70a1027000000000000220020c766cec1ef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bde024503d70ae32a000000000000220020c766cec1ef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bdef7bde024503d60a00000000',
-        );
-      });
-    },
-  );
+    const recipients = <int>[9000000, 8000000, 7000000];
+    const message = 'DigiByte regression';
 
-  group(
-    'testnet',
-    () {
-      test(
-        'Generate unused testnet address',
-        () async {
-          await wallet.generateUnusedAddress(testnetWalletName);
-          assert(
-            wallet.getUnusedAddress(testnetWalletName) ==
-                'n49CCQFuncaXbtBoNm39gSP9dvRP2eFFSw',
-          );
+    final result = await wallet.buildTransaction(
+      identifier: identifier,
+      fee: 0,
+      recipients: {
+        first: recipients[0],
+        second: recipients[1],
+        third: recipients[2],
+      },
+      opReturn: message,
+    );
+
+    final tx = Transaction.fromHex(result.hex);
+
+    expectSigned(tx);
+
+    expect(result.recipients.length, 3);
+    expect(result.totalAmount, 24000000);
+
+    expect(
+      outputValue(tx, first),
+      BigInt.from(recipients[0]),
+    );
+    expect(
+      outputValue(tx, second),
+      BigInt.from(recipients[1]),
+    );
+    expect(
+      outputValue(tx, third),
+      BigInt.from(recipients[2]),
+    );
+
+    final opReturnOutputs = tx.outputs.where(
+      (output) =>
+          output.scriptPubKey.isNotEmpty &&
+          output.scriptPubKey.first == 0x6a,
+    ).toList();
+
+    expect(opReturnOutputs.length, 1);
+    expect(opReturnOutputs.single.value, BigInt.zero);
+    expect(
+      bytesToHex(opReturnOutputs.single.scriptPubKey),
+      contains('44696769427974652072656772657373696f6e'),
+    );
+
+    expect(result.opReturn, message);
+
+    expectConservation(
+      tx,
+      baseFunding + supportAmount(),
+      result.fee,
+    );
+  });
+
+  test('Overspending confirmed funds is rejected', () async {
+    final destination = recipientAddress(7);
+
+    await expectLater(
+      wallet.buildTransaction(
+        identifier: identifier,
+        fee: 0,
+        recipients: {
+          destination: baseFunding + supportAmount() + 1,
         },
-      );
+      ),
+      throwsA(
+        equals('tx amount greater wallet balance'),
+      ),
+    );
+  });
 
-      test('Add testnet UTXO', () async {
-        await wallet.putUtxos(
-          identifier: testnetWalletName,
-          address: wallet.getUnusedAddress(testnetWalletName),
-          utxos: [
-            {
-              'tx_hash':
-                  '6c0e78d2a2bdc8777e2bb9c30cd25b58a1fb18c7ca55b89a1e179c288da99efd',
-              'tx_pos': 1,
-              'height': 99,
-              'value': 10000000, //test output of 10
-            }
-          ],
-        );
-        final getUtxos = await wallet.getWalletUtxos(testnetWalletName);
-        assert(getUtxos.length == 1);
-        assert(getUtxos[0].runtimeType == WalletUtxo);
-        assert(
-          getUtxos[0].address == wallet.getUnusedAddress(testnetWalletName),
-        );
-        assert(getUtxos[0].value == 10000000);
-      });
-
-      test('Send OP_RETURN message from 0 Output', () async {
-        final result = await wallet.buildTransaction(
-          identifier: testnetWalletName,
-          fee: 0,
-          recipients: {
-            'n4pJDAqsagWbouT7G7xRH8548s9pZpQwtG': 0,
-          },
-          opReturn: 'test',
-        );
-
-        assert(result.fee == 2400);
-        assert(
-          result.hex ==
-              '0300000001fd9ea98d289c171e9ab855cac718fba1585bd20cc3b92b7e77c8bda2d2780e6c010000006a47304402207b90e7910dcf86a6b6dc3f7a99109cdbe9b8a11a894a56633c5ea384abe44a6f02206052da8d5d2de4ff7a17ef18e3efadefbe7b3125ccb2440e4d509e192689a17b0121022036646b3fd79dee41351f727f0a6e10d0e7f98585961bc14e7aadaf5f4b66abffffffff03208d9800000000001976a914f82d58dd8487044d8d0879c15a2a3516a425de2a88ac00000000000000001976a914ff9296d92c5efc397d0e0b9ebe94d95a532270c488ac0000000000000000066a047465737400000000',
-        );
-      });
-
-      test('Find OP_RETURN message in Tx', () async {
-        const tx = '''
+  test('Unconfirmed UTXOs are not spendable balance', () async {
+    await wallet.putUtxos(
+      identifier: identifier,
+      address: ownAddress,
+      utxos: [
         {
-          "txid": "93b625d6d3c34d84a5f81c9aea1f509090d64c39b5b12da926e55122416f6cdd",
-          "hash": "93b625d6d3c34d84a5f81c9aea1f509090d64c39b5b12da926e55122416f6cdd",
-          "version": 3,
-          "time": 0,
-          "size": 238,
-          "vsize": 238,
-          "weight": 952,
-          "locktime": 0,
-          "vin": [
-            {
-              "txid": "c67d874de945d10ab7da1d85de0681e53359559d14e80b2114d8ffbf68839c49",
-              "vout": 0,
-              "scriptSig": {
-                "asm": "3044022032ae74d15ba45916b8183748e20317d1d84347fd27d458c7c0f296f1837347d802205e5df2aa058fb6b88452b80843f05c5cbb9848c98e73919218fca5fa831daa21[ALL] 025bfb039e390283e1682c53aa19087725b63039f9f18d32a3ff3be444669b31df",
-                "hex": "473044022032ae74d15ba45916b8183748e20317d1d84347fd27d458c7c0f296f1837347d802205e5df2aa058fb6b88452b80843f05c5cbb9848c98e73919218fca5fa831daa210121025bfb039e390283e1682c53aa19087725b63039f9f18d32a3ff3be444669b31df"
-              },
-              "sequence": 4294967295
-            }
-          ],
-          "vout": [
-            {
-              "value": 9.500994,
-              "n": 0,
-              "scriptPubKey": {
-                "asm": "OP_DUP OP_HASH160 e6cf69bef993f88d547cd0a6fca17a4a4ed3e0c5 OP_EQUALVERIFY OP_CHECKSIG",
-                "desc": "addr(n2ZNBVFB9Rob6CBxUz4L7JhkkRsohddptN)#vwhka9fn",
-                "hex": "76a914e6cf69bef993f88d547cd0a6fca17a4a4ed3e0c588ac",
-                "address": "n2ZNBVFB9Rob6CBxUz4L7JhkkRsohddptN",
-                "type": "pubkeyhash"
-              }
-            },
-            {
-              "value": 0,
-              "n": 1,
-              "scriptPubKey": {
-                "asm": "OP_DUP OP_HASH160 e611a8894f845a0a99e8f87d16850ef1bbfea819 OP_EQUALVERIFY OP_CHECKSIG",
-                "desc": "addr(n2VSs6f787ebhgRRnURdLtinCkPjDT4zZ7)#2l0s7aqf",
-                "hex": "76a914e611a8894f845a0a99e8f87d16850ef1bbfea81988ac",
-                "address": "n2VSs6f787ebhgRRnURdLtinCkPjDT4zZ7",
-                "type": "pubkeyhash"
-              }
-            },
-            {
-              "value": 0,
-              "n": 2,
-              "scriptPubKey": {
-                "asm": "OP_RETURN 26952",
-                "desc": "raw(6a024869)#nz6xdglz",
-                "hex": "6a024869",
-                "type": "nulldata"
-              }
-            }
-          ],
-          "hex": "0300000001499c8368bfffd814210be8149d555933e58106de851ddab70ad145e94d877dc6000000006a473044022032ae74d15ba45916b8183748e20317d1d84347fd27d458c7c0f296f1837347d802205e5df2aa058fb6b88452b80843f05c5cbb9848c98e73919218fca5fa831daa210121025bfb039e390283e1682c53aa19087725b63039f9f18d32a3ff3be444669b31dfffffffff0342f99000000000001976a914e6cf69bef993f88d547cd0a6fca17a4a4ed3e0c588ac00000000000000001976a914e611a8894f845a0a99e8f87d16850ef1bbfea81988ac0000000000000000046a02486900000000",
-          "blockhash": "d8f5dc9f9d403ab5313319d7c6c5c96db48cf44c5f1aa04927b74d8280184dbe",
-          "confirmations": 3,
-          "blocktime": 1694515176
-        }
-        ''';
+          'tx_hash': txHash,
+          'tx_pos': 0,
+          'height': 0,
+          'value': baseFunding,
+        },
+      ],
+    );
 
-        const address = 'n2VSs6f787ebhgRRnURdLtinCkPjDT4zZ7';
+    final coinWallet = wallet.getSpecificCoinWallet(identifier);
 
-        await wallet.addAddressFromWif(
-          identifier: testnetWalletName,
-          wif: '',
-          address: address,
-        );
+    expect(coinWallet.balance, 0);
+    expect(coinWallet.unconfirmedBalance, baseFunding);
 
-        await wallet.putUtxos(
-          identifier: testnetWalletName,
-          address: address,
-          utxos: json.decode(
-            '[{"tx_hash": "93b625d6d3c34d84a5f81c9aea1f509090d64c39b5b12da926e55122416f6cdd", "tx_pos": 1, "height": 546555, "value": 0}]',
-          ),
-        );
-
-        await wallet.putTx(
-          identifier: testnetWalletName,
-          address: address,
-          tx: json.decode(tx),
-          notify: false,
-        );
-
-        final txn = await wallet.getWalletTransactions(testnetWalletName);
-
-        assert(txn[1].opReturn == 'Hi');
-      });
-
-      test(
-          'Import 1000 addresses from CSV, only have 10 DGB utxo and expect exception',
-          () async {
-        Map<String, int> recipientMap = {};
-        final parsed = fast_csv
-            .parse(await File('./test/csvs/test_1000.csv').readAsString());
-        for (final row in parsed) {
-          final address = row[0];
-          final amount = double.parse(
-            row[1].replaceAll(',', '.'),
-          );
-          recipientMap[address] = (amount * decimalProduct).toInt();
-        }
-        Exception error = Exception();
-        try {
-          await wallet.buildTransaction(
-            identifier: testnetWalletName,
-            fee: 0,
-            recipients: recipientMap,
-          );
-        } catch (e) {
-          error = e as Exception;
-        }
-        assert(error.runtimeType == CantPayForFeesException);
-        final asCantPayEx = error as CantPayForFeesException;
-        assert(asCantPayEx.feesMissing == 421590);
-      });
-
-      test('Import 500 addresses from CSV and build', () async {
-        Map<String, int> recipientMap = {};
-        final parsed = fast_csv
-            .parse(await File('./test/csvs/test_500.csv').readAsString());
-        for (final row in parsed) {
-          final address = row[0];
-          final amount = double.parse(
-            row[1].replaceAll(',', '.'),
-          );
-          recipientMap[address] = (amount * decimalProduct).toInt();
-        }
-
-        final result = await wallet.buildTransaction(
-          identifier: testnetWalletName,
-          fee: 0,
-          recipients: recipientMap,
-        );
-        assert(result.totalAmount == 5000000);
-        assert(result.fee == 216930);
-        assert(
-          result.id ==
-              '4fe5d84ee747a358fffa808fef6166b04b58eaafddeaaa3b2ee68437cbc13807',
-        );
-      });
-    },
-  );
+    await expectLater(
+      wallet.buildTransaction(
+        identifier: identifier,
+        fee: 0,
+        recipients: {
+          recipientAddress(8): 1000000,
+        },
+      ),
+      throwsA(
+        equals('tx amount greater wallet balance'),
+      ),
+    );
+  });
 }

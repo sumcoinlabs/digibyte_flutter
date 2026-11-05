@@ -1,4 +1,9 @@
 ### **0.1.5** (2026-10-28)
+- Security: Updated Firebase dependencies to the compatible FlutterFire 4.20.2 release set.
+- Security: Patched Cloud Firestore certificate validation for the eMudhra CA compromise.
+- Security: Updated the Flutter/Dart build toolchain to address TLS certificate validation vulnerabilities.
+- Removed the unused, discontinued Firebase Dynamic Links dependency.
+- Updated GitHub Actions to build from master with patched Flutter and Java 17.
 - Raised minimum supported iOS version to 15.0 for future releases.
 - Improved iOS Keychain handling and wallet startup reliability.
 - Enabled Firebase notification-open analytics on iOS.

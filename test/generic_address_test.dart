@@ -10,7 +10,7 @@ void main() {
 
       final address = GenericAddress.fromAsm(asm, Network.testnet);
       expect(address is P2PKHAddress, true);
-      expect(address.toString(), 'n4pJDAqsagWbouT7G7xRH8548s9pZpQwtG');
+      expect(address.toString(), 't6tLyoKCEPTk5QYQdQxCZ19raS1yESk8PS');
     });
 
     test('fromAsm - P2SH', () {
@@ -18,7 +18,7 @@ void main() {
           'OP_HASH160 1123c89acd257e796c209f6f1914ed999f45076d OP_EQUAL';
       final address = GenericAddress.fromAsm(asm, Network.mainnet);
       expect(address is P2SHAddress, true);
-      expect(address.toString(), 'p77CZFn9jvg9waCzKBzkQfSvBBzPH1nRre');
+      expect(address.toString(), 'SNrdPPgbQBeqnAgJzY1YDtkSBx5Svg36Fn');
     });
 
     test('fromAsm - Unknown program type', () {

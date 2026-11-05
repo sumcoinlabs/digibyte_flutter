@@ -64,12 +64,7 @@
             </intent-filter>
         </service>
 
-        <!-- Background Fetch Headless Task Service -->
-        <service
-            android:name="com.transistorsoft.flutter.backgroundfetch.HeadlessTask"
-            android:permission="android.permission.BIND_JOB_SERVICE"
-            android:exported="true">
-        </service>
+
 
         <!-- Add default notification channel metadata -->
         <meta-data

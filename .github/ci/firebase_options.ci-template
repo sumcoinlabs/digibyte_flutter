@@ -1,0 +1,43 @@
+// CI-only Firebase configuration.
+//
+// These are deliberately nonfunctional placeholder values.
+// This file is copied into place only during GitHub unit tests.
+// Never use it for an app release.
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
+
+class DefaultFirebaseOptions {
+  static const FirebaseOptions placeholder = FirebaseOptions(
+    apiKey: 'ci-not-a-real-firebase-key',
+    appId: '1:1234567890:android:0123456789abcdef',
+    messagingSenderId: '1234567890',
+    projectId: 'digibyte-ci-placeholder',
+  );
+
+  static const FirebaseOptions android = placeholder;
+  static const FirebaseOptions ios = placeholder;
+  static const FirebaseOptions macos = placeholder;
+  static const FirebaseOptions web = placeholder;
+  static const FirebaseOptions windows = placeholder;
+  static const FirebaseOptions linux = placeholder;
+
+  static FirebaseOptions get currentPlatform {
+    if (kIsWeb) return web;
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return android;
+      case TargetPlatform.iOS:
+        return ios;
+      case TargetPlatform.macOS:
+        return macos;
+      case TargetPlatform.windows:
+        return windows;
+      case TargetPlatform.linux:
+        return linux;
+      case TargetPlatform.fuchsia:
+        return placeholder;
+    }
+  }
+}

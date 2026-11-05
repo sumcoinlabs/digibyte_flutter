@@ -11,10 +11,10 @@ void main() async {
     final network = AvailableCoins.getSpecificCoin('digibyte').networkType;
     test('validateAddress', () {
       assert(
-        validateAddress('PXDR4KZn2WdTocNx1GPJXR96PfzZBvWqKQ', network) == true,
+        validateAddress('DUSSTNhY54ydZoA6H8ybzy2LA1HQvYpS1G', network) == true,
       );
       assert(
-        validateAddress('PXDR4KZn2WdTocNx1GPJXR96PfzZBvWqKq', network) == false,
+        validateAddress('DUSSTNhY54ydZoA6H8ybzy2LA1HQvYpS1H', network) == false,
       );
     });
 

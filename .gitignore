@@ -117,3 +117,7 @@ android/app/src/main/AndroidManifest.xml
 
 # Project support configuration
 lib/tools/project_support.dart
+
+# Private Mac-only application files
+/lib/main.dart
+/lib/widgets/collector.dart

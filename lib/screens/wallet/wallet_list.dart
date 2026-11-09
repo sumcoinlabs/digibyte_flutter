@@ -257,6 +257,33 @@ class _WalletListScreenState extends State<WalletListScreen>
                         ),
                         const SizedBox(height: 40),
 
+                        if (_nOfHiddenWallets > 0)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: TextButton.icon(
+                              key: const Key('toggleHiddenWalletsButton'),
+                              onPressed: _toggleHiddenWallets,
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.white,
+                              ),
+                              icon: Icon(
+                                _showHiddenWallets
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              label: Text(
+                                AppLocalizations.instance.translate(
+                                  _showHiddenWallets
+                                      ? 'hide_hidden_wallets_list'
+                                      : 'show_hidden_wallets_list',
+                                  {
+                                    'nOfHiddenWallets':
+                                        _nOfHiddenWallets.toString(),
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
                         // Show either "no wallets" or the list
                         _activeWalletsOrdered.isEmpty
                             ? Expanded(

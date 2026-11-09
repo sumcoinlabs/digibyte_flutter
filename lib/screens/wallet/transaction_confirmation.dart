@@ -245,15 +245,6 @@ class _TransactionConfirmationScreenState
                             )
                           : const SizedBox(),
                       const Divider(),
-                      buildResult.feesHaveBeenDeductedFromRecipient
-                          ? Text(
-                              AppLocalizations.instance
-                                  .translate('send_fees_deducted'),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            )
-                          : const SizedBox(),
                       const SizedBox(
                         height: 20,
                       ),

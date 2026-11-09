@@ -169,6 +169,28 @@ class WalletProvider with ChangeNotifier {
     final String projectSupportAddress =
         shouldAddProjectSupport ? ProjectSupport.address : '';
 
+    // Send All: automatically reserve project support.
+    // The existing transaction builder deducts the network fee.
+    if (firstPass &&
+        shouldAddProjectSupport &&
+        paperWalletUtxos == null &&
+        recipients.length == 1) {
+      final balance = getSpecificCoinWallet(identifier).balance;
+
+      if (userTxAmount == balance) {
+        final address = recipients.keys.single;
+        final adjustedAmount = balance - projectSupport;
+
+        if (adjustedAmount < coinForProjectSupport.minimumTxValue) {
+          throw CantPayForFeesException(
+            coinForProjectSupport.minimumTxValue - adjustedAmount,
+          );
+        }
+
+        recipients = {address: adjustedAmount};
+      }
+    }
+
     if (shouldAddProjectSupport) {
       // Add project support as a real transaction output, but keep it separate
       // from the user recipient list returned to the confirmation UI.

@@ -57,7 +57,7 @@ dependencies:
   app_bar_with_search_switch: ^1.5.4
   decimal: ^3.2.4
   characters: ^1.2.0
-  digicoinlib_flutter: ^0.0.2
+  digicoinlib_flutter: ^0.0.3
 
   firebase_core: ^4.15.2
   firebase_analytics: ^12.6.1

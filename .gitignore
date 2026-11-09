@@ -114,3 +114,6 @@ __MACOSX/
 
 # Private Android manifest
 android/app/src/main/AndroidManifest.xml
+
+# Project support configuration
+lib/tools/project_support.dart

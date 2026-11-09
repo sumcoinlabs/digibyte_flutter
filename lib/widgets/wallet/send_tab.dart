@@ -667,6 +667,7 @@ class _SendTabState extends State<SendTab> {
   }
 
   Widget _buildAmountKeypad() {
+    final foreground = Theme.of(context).colorScheme.onSurface;
     const keys = <List<String>>[
       ['1', '2', '3'],
       ['4', '5', '6'],
@@ -683,8 +684,8 @@ class _SendTabState extends State<SendTab> {
               Text('Enter amount', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
               TextButton.icon(
                 onPressed: () => setState(() => _showAmountKeypad = false),
-                icon: const Icon(Icons.check, color: Colors.white),
-                label: const Text('Done', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                icon: Icon(Icons.check, color: foreground),
+                label: Text('Done', style: TextStyle(color: foreground, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -703,7 +704,7 @@ class _SendTabState extends State<SendTab> {
                             color: Colors.transparent,
                             shape: CircleBorder(
                               side: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.55),
+                                color: foreground.withValues(alpha: 0.7),
                                 width: 0.85,
                               ),
                             ),
@@ -715,15 +716,15 @@ class _SendTabState extends State<SendTab> {
                                 height: 54,
                                 child: Center(
                                   child: key == 'backspace'
-                                      ? const Icon(
+                                      ? Icon(
                                           Icons.backspace_outlined,
-                                          color: Colors.white,
+                                          color: foreground,
                                           size: 22,
                                         )
                                       : Text(
                                           key,
-                                          style: const TextStyle(
-                                            color: Colors.white,
+                                          style: TextStyle(
+                                            color: foreground,
                                             fontSize: 26,
                                             fontWeight: FontWeight.w500,
                                           ),

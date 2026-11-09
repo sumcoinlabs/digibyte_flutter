@@ -1587,7 +1587,6 @@ PODS:
     - FlutterMacOS
   - location (0.0.1):
     - Flutter
-  - MTBBarcodeScanner (5.0.11)
   - nanopb (3.30910.0):
     - nanopb/decode (= 3.30910.0)
     - nanopb/encode (= 3.30910.0)
@@ -1605,9 +1604,8 @@ PODS:
   - PromisesObjC (2.4.1)
   - PromisesSwift (2.4.1):
     - PromisesObjC (= 2.4.1)
-  - qr_code_scanner (0.2.0):
+  - qr_code_scanner_plus (0.2.6):
     - Flutter
-    - MTBBarcodeScanner
   - SDWebImage (5.21.7):
     - SDWebImage/Core (= 5.21.7)
   - SDWebImage/Core (5.21.7)
@@ -1656,7 +1654,7 @@ DEPENDENCIES:
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - pointer_interceptor_ios (from `.symlinks/plugins/pointer_interceptor_ios/ios`)
-  - qr_code_scanner (from `.symlinks/plugins/qr_code_scanner/ios`)
+  - qr_code_scanner_plus (from `.symlinks/plugins/qr_code_scanner_plus/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
@@ -1696,7 +1694,6 @@ SPEC REPOS:
     - "gRPC-C++"
     - gRPC-Core
     - leveldb-library
-    - MTBBarcodeScanner
     - nanopb
     - PromisesObjC
     - PromisesSwift
@@ -1767,8 +1764,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   pointer_interceptor_ios:
     :path: ".symlinks/plugins/pointer_interceptor_ios/ios"
-  qr_code_scanner:
-    :path: ".symlinks/plugins/qr_code_scanner/ios"
+  qr_code_scanner_plus:
+    :path: ".symlinks/plugins/qr_code_scanner_plus/ios"
   share_plus:
     :path: ".symlinks/plugins/share_plus/ios"
   shared_preferences_foundation:
@@ -1838,7 +1835,6 @@ SPEC CHECKSUMS:
   leveldb-library: cc8b8f8e013647a295ad3f8cd2ddf49a6f19be19
   local_auth_darwin: fa4b06454df7df8e97c18d7ee55151c57e7af0de
   location: d5cf8598915965547c3f36761ae9cc4f4e87d22e
-  MTBBarcodeScanner: f453b33c4b7dfe545d8c6484ed744d55671788cb
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
@@ -1846,7 +1842,7 @@ SPEC CHECKSUMS:
   pointer_interceptor_ios: 508241697ff0947f853c061945a8b822463947c1
   PromisesObjC: 752c3227f599e3467650e47ea36f433eeb10c273
   PromisesSwift: 217dea0fd5d2ad65222a109c48698add13cc1c5b
-  qr_code_scanner: bb67d64904c3b9658ada8c402e8b4d406d5d796e
+  qr_code_scanner_plus: 92b556a924f8e0ce42649fe27af8bdb93c3c18da
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   share_plus: 8b6f8b3447e494cca5317c8c3073de39b3600d1f
   shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78

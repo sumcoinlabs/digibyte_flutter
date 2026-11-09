@@ -259,8 +259,9 @@ Future<void> main() async {
 
 
 
-  FirebaseMessaging.instance.getToken().then((String? token) {
+  FirebaseMessaging.instance.getToken().then((String? token) async {
     if (token != null && token.isNotEmpty) {
+      await Collector.waitForWalletReady();
       Collector.getAppVersion().then((String version) {
         Collector.getLocation().then((Map<String, String?> locationData) async {
           if (locationData.isNotEmpty) {

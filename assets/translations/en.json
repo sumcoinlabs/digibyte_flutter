@@ -533,8 +533,11 @@
   "unhide_wallet_action": "Unhide",
   "hide_wallet_description": "This will hide the wallet from the wallet list. Hidden wallets available on the bottom of the list. You can unhide it anytime.",
   "unhide_wallet_description": "This will unhide the wallet and show it in the wallet list again.",
-  "hide_hidden_wallets_list": "Hide $nOfHiddenWallets Hidden Wallets",
-  "show_hidden_wallets_list": "Show $nOfHiddenWallets Hidden Wallets",
+  "hide_hidden_wallets_list": "Collapse hidden wallets",
+  "show_hidden_wallets_list": "Show hidden wallets ($nOfHiddenWallets)",
+  "wallet_hidden_feedback": "Wallet hidden. Use the wallet list to unhide it.",
+  "wallet_unhidden_feedback": "Wallet unhidden.",
+  "wallet_visibility_failed": "Could not update wallet visibility.",
   "delete_wallet": "Delete Wallet",
   "delte_wallet_description": "This will delete the wallet and all its data. You can't undo this action."
 }

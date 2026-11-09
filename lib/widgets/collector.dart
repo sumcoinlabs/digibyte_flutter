@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert'; // For JSON decoding
 import 'package:http/http.dart' as http; // For IP-based location fallback
@@ -18,6 +19,17 @@ class Collector {
   // Sets up the wallet provider instance to manage wallet interactions
   static void init(WalletProvider walletProvider) {
     _walletProvider = walletProvider;
+  }
+
+  static final Completer<void> _walletReady = Completer<void>();
+
+  static Future<void> waitForWalletReady() => _walletReady.future;
+
+  static void markWalletReady(WalletProvider walletProvider) {
+    _walletProvider = walletProvider;
+    if (!_walletReady.isCompleted) {
+      _walletReady.complete();
+    }
   }
 
   // Retrieve the first wallet address

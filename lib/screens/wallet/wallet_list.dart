@@ -37,6 +37,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 // Remove "const" if BannerAdWidget doesn't have a const constructor
 import '../../widgets/banner_ad_widget.dart';
+import '../../widgets/collector.dart';
 
 /// Utility to format coin amounts up to 8 decimals, with commas:
 String formatCoin(double amount) {
@@ -622,6 +623,7 @@ class _WalletListScreenState extends State<WalletListScreen>
       try {
         await _appSettings.init();
         await _walletProvider.init();
+        Collector.markWalletReady(_walletProvider);
         await _orderWallets();
         final prefs = await SharedPreferences.getInstance();
         _importedSeed = prefs.getBool('importedSeed') == true;

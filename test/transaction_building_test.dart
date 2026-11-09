@@ -19,15 +19,13 @@ class TestEncryptedBoxes extends EncryptedBoxProvider {
   TestEncryptedBoxes(this.testKey);
 
   @override
-  Future<Box?> getGenericBox(String name) =>
-      Hive.openBox(
+  Future<Box?> getGenericBox(String name) => Hive.openBox(
         name,
         encryptionCipher: HiveAesCipher(testKey),
       );
 
   @override
-  Future<Box<CoinWallet>> getWalletBox() =>
-      Hive.openBox<CoinWallet>(
+  Future<Box<CoinWallet>> getWalletBox() => Hive.openBox<CoinWallet>(
         'wallets',
         encryptionCipher: HiveAesCipher(testKey),
       );
@@ -37,12 +35,10 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   const identifier = 'digibyte';
-  const mnemonic =
-      'abandon abandon abandon abandon abandon abandon '
+  const mnemonic = 'abandon abandon abandon abandon abandon abandon '
       'abandon abandon abandon abandon abandon about';
 
-  const txHash =
-      '11223344556677889900aabbccddeeff'
+  const txHash = '11223344556677889900aabbccddeeff'
       '00112233445566778899aabbccddeeff';
 
   const baseFunding = 200000000;
@@ -56,9 +52,7 @@ void main() {
   late String ownAddress;
 
   int supportAmount() =>
-      ProjectSupport.enabledFor('DGB')
-          ? ProjectSupport.amount
-          : 0;
+      ProjectSupport.enabledFor('DGB') ? ProjectSupport.amount : 0;
 
   String recipientAddress(int index) {
     final privateKey = ECPrivateKey.fromHex(
@@ -81,8 +75,7 @@ void main() {
 
     return tx.outputs
         .where(
-          (output) =>
-              bytesToHex(output.scriptPubKey) == targetScript,
+          (output) => bytesToHex(output.scriptPubKey) == targetScript,
         )
         .fold<BigInt>(
           BigInt.zero,
@@ -264,6 +257,29 @@ void main() {
     );
   });
 
+  test('Send All uses full balance and reserves support plus fee', () async {
+    final destination = recipientAddress(10);
+    final balance = wallet.getSpecificCoinWallet(identifier).balance;
+
+    final result = await wallet.buildTransaction(
+      identifier: identifier,
+      fee: 0,
+      recipients: {destination: balance},
+    );
+
+    final tx = Transaction.fromHex(result.hex);
+    expectSigned(tx);
+
+    final expectedPayment = balance - supportAmount() - result.fee;
+
+    expect(result.neededChange, isFalse);
+    expect(result.feesHaveBeenDeductedFromRecipient, isTrue);
+    expect(result.projectSupport, supportAmount());
+    expect(result.recipients[destination], expectedPayment);
+    expect(outputValue(tx, destination), BigInt.from(expectedPayment));
+    expectConservation(tx, balance, result.fee);
+  });
+
   test('Send-max deducts network fee from user payment', () async {
     final destination = recipientAddress(3);
 
@@ -346,11 +362,13 @@ void main() {
       BigInt.from(recipients[2]),
     );
 
-    final opReturnOutputs = tx.outputs.where(
-      (output) =>
-          output.scriptPubKey.isNotEmpty &&
-          output.scriptPubKey.first == 0x6a,
-    ).toList();
+    final opReturnOutputs = tx.outputs
+        .where(
+          (output) =>
+              output.scriptPubKey.isNotEmpty &&
+              output.scriptPubKey.first == 0x6a,
+        )
+        .toList();
 
     expect(opReturnOutputs.length, 1);
     expect(opReturnOutputs.single.value, BigInt.zero);

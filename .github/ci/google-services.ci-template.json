@@ -1,0 +1,23 @@
+{
+  "project_info": {
+    "project_number": "1234567890",
+    "project_id": "digibyte-ci-placeholder",
+    "storage_bucket": "digibyte-ci-placeholder.invalid"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1234567890:android:0123456789abcdef",
+        "android_client_info": {
+          "package_name": "org.digibytewallet"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "ci-not-a-real-firebase-key"
+        }
+      ]
+    }
+  ],
+  "configuration_version": "1"
+}

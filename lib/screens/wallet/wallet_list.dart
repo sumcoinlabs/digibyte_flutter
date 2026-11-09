@@ -37,6 +37,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 // Remove "const" if BannerAdWidget doesn't have a const constructor
 import '../../widgets/banner_ad_widget.dart';
+import '../../widgets/collector.dart';
 
 /// Utility to format coin amounts up to 8 decimals, with commas:
 String formatCoin(double amount) {
@@ -257,6 +258,33 @@ class _WalletListScreenState extends State<WalletListScreen>
                         ),
                         const SizedBox(height: 40),
 
+                        if (_nOfHiddenWallets > 0)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: TextButton.icon(
+                              key: const Key('toggleHiddenWalletsButton'),
+                              onPressed: _toggleHiddenWallets,
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.white,
+                              ),
+                              icon: Icon(
+                                _showHiddenWallets
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              label: Text(
+                                AppLocalizations.instance.translate(
+                                  _showHiddenWallets
+                                      ? 'hide_hidden_wallets_list'
+                                      : 'show_hidden_wallets_list',
+                                  {
+                                    'nOfHiddenWallets':
+                                        _nOfHiddenWallets.toString(),
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
                         // Show either "no wallets" or the list
                         _activeWalletsOrdered.isEmpty
                             ? Expanded(
@@ -595,6 +623,7 @@ class _WalletListScreenState extends State<WalletListScreen>
       try {
         await _appSettings.init();
         await _walletProvider.init();
+        Collector.markWalletReady(_walletProvider);
         await _orderWallets();
         final prefs = await SharedPreferences.getInstance();
         _importedSeed = prefs.getBool('importedSeed') == true;

@@ -59,6 +59,7 @@ class _WalletHomeState extends State<WalletHomeScreen>
   late List<WalletTransaction> _walletTransactions = [];
   late ServerProvider _servers;
   bool _didInitialTransactionRefresh = false;
+  bool _hideWalletChangeInProgress = false;
   String? _address;
   String? _label;
   String _searchString = '';
@@ -588,14 +589,50 @@ class _WalletHomeState extends State<WalletHomeScreen>
       ),
       isDismissible: false,
       enableDrag: false,
-      builder: (BuildContext context) {
+      builder: (BuildContext sheetContext) {
         return WalletHideBottomSheet(
           hidden: _wallet.hidden,
           action: () async {
-            await _walletProvider.setHideWallet(_wallet.name, !_wallet.hidden);
+            if (_hideWalletChangeInProgress) return;
+            _hideWalletChangeInProgress = true;
 
-            if (context.mounted) {
-              Navigator.of(context).pop(); // pops modal bottom sheet
+            try {
+              final hiding = !_wallet.hidden;
+              await _walletProvider.setHideWallet(_wallet.name, hiding);
+
+              if (!mounted) return;
+
+              final navigator = Navigator.of(this.context);
+              final messenger = ScaffoldMessenger.of(this.context);
+
+              Navigator.of(sheetContext).pop();
+              navigator.pop();
+
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(
+                    AppLocalizations.instance.translate(
+                      hiding
+                          ? 'wallet_hidden_feedback'
+                          : 'wallet_unhidden_feedback',
+                    ),
+                  ),
+                ),
+              );
+            } catch (error) {
+              if (mounted) {
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      AppLocalizations.instance.translate(
+                        'wallet_visibility_failed',
+                      ),
+                    ),
+                  ),
+                );
+              }
+            } finally {
+              _hideWalletChangeInProgress = false;
             }
           },
         );

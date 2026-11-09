@@ -1,4 +1,4 @@
-### **0.1.5** (2026-10-28)
+### **0.1.5** (2026-11-9)
 - Security: Updated Firebase dependencies to the compatible FlutterFire 4.20.2 release set.
 - Security: Patched Cloud Firestore certificate validation for the eMudhra CA compromise.
 - Security: Updated the Flutter/Dart build toolchain to address TLS certificate validation vulnerabilities.
@@ -10,6 +10,8 @@
 - Set iPad interface orientation to portrait only.
 - Screen Scaling improvements on large font settings.
 - Banner ads now use screen space only when an ad is available.
+- Ensure send screen does not crash when using "Send All"
+- Light mode Keypad now showing and fixes to Hide/Unhide Wallet
 
 ### **0.1.4** (2026-10-18)
 - Updated Electrum connections and viability

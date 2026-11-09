@@ -101,7 +101,7 @@ class _SendTabState extends State<SendTab> {
       _fiatEnabled = _appSettings.selectedCurrency.isNotEmpty && !widget.wallet.name.contains('Testnet');
       // Default to the user's configured fiat code rather than hardcoded USD.
       // The selector still lets them switch back to DGB for coin amounts.
-      _fiatInputEnabled = _fiatEnabled;
+      _fiatInputEnabled = false;
       _calcAmountInputHelperText(_currentAddressIndex);
 
       setState(() {
@@ -190,7 +190,7 @@ class _SendTabState extends State<SendTab> {
                                 autocorrect: false,
                                 onTap: () => setState(() => _showAmountKeypad = false),
                                 decoration: InputDecoration(
-                                  icon: Icon(Icons.shuffle, color: Theme.of(context).primaryColor),
+                                  icon: Icon(Icons.shuffle, color: Theme.of(context).colorScheme.onSurface),
                                   labelText: AppLocalizations.instance.translate('tx_address'),
                                   suffixIcon: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -209,7 +209,7 @@ class _SendTabState extends State<SendTab> {
                                             LoggerWrapper.logError('SendTab', 'paste', '$e');
                                           }
                                         },
-                                        icon: Icon(Icons.paste_rounded, color: Theme.of(context).primaryColor),
+                                        icon: Icon(Icons.paste_rounded, color: Theme.of(context).colorScheme.onSurface),
                                       ),
                                       if (_appSettings.camerasAvailble)
                                         IconButton(
@@ -226,7 +226,7 @@ class _SendTabState extends State<SendTab> {
                                               _parseQrResult(result);
                                             }
                                           },
-                                          icon: Icon(Icons.qr_code_scanner, color: Theme.of(context).primaryColor),
+                                          icon: Icon(Icons.qr_code_scanner, color: Theme.of(context).colorScheme.onSurface),
                                         ),
                                     ],
                                   ),
@@ -264,7 +264,7 @@ class _SendTabState extends State<SendTab> {
                         onTap: () => setState(() => _showAmountKeypad = false),
                         onChanged: (_) => setState(() {}),
                         decoration: InputDecoration(
-                          icon: Icon(Icons.bookmark, color: Theme.of(context).primaryColor),
+                          icon: Icon(Icons.bookmark, color: Theme.of(context).colorScheme.onSurface),
                           labelText: AppLocalizations.instance.translate('send_label'),
                           counterText: '',
                           suffixText: '${_labelControllerList[_currentAddressIndex].text.length}/32',
@@ -291,7 +291,7 @@ class _SendTabState extends State<SendTab> {
                           setState(() => _showAmountKeypad = true);
                         },
                         decoration: InputDecoration(
-                          icon: Icon(Icons.money, color: Theme.of(context).primaryColor),
+                          icon: Icon(Icons.money, color: Theme.of(context).colorScheme.onSurface),
                           labelText: AppLocalizations.instance.translate('send_amount'),
                           suffixIcon: _fiatEnabled
                               ? PopupMenuButton<bool>(
@@ -328,6 +328,12 @@ class _SendTabState extends State<SendTab> {
                           Padding(
                             padding: const EdgeInsets.only(top: 12),
                             child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Theme.of(context).colorScheme.onSurface,
+                                side: BorderSide(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.75),
+                                ),
+                              ),
                               onPressed: _numberOfRecipients == 1 ? _selectAllAmount : null,
                               child: Text(AppLocalizations.instance.translate('send_all')),
                             ),
@@ -415,7 +421,7 @@ class _SendTabState extends State<SendTab> {
                                   print('Clipboard error: $e');
                                 }
                               },
-                              icon: Icon(Icons.paste_rounded, color: Theme.of(context).primaryColor),
+                              icon: Icon(Icons.paste_rounded, color: Theme.of(context).colorScheme.onSurface),
                             ),
                             icon: Icon(Icons.message, color: Theme.of(context).primaryColor),
                             labelText: AppLocalizations.instance.translate('send_op_return'),
@@ -661,6 +667,7 @@ class _SendTabState extends State<SendTab> {
   }
 
   Widget _buildAmountKeypad() {
+    final foreground = Theme.of(context).colorScheme.onSurface;
     const keys = <List<String>>[
       ['1', '2', '3'],
       ['4', '5', '6'],
@@ -677,8 +684,8 @@ class _SendTabState extends State<SendTab> {
               Text('Enter amount', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
               TextButton.icon(
                 onPressed: () => setState(() => _showAmountKeypad = false),
-                icon: const Icon(Icons.check, color: Colors.white),
-                label: const Text('Done', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                icon: Icon(Icons.check, color: foreground),
+                label: Text('Done', style: TextStyle(color: foreground, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -697,7 +704,7 @@ class _SendTabState extends State<SendTab> {
                             color: Colors.transparent,
                             shape: CircleBorder(
                               side: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.55),
+                                color: foreground.withValues(alpha: 0.7),
                                 width: 0.85,
                               ),
                             ),
@@ -709,15 +716,15 @@ class _SendTabState extends State<SendTab> {
                                 height: 54,
                                 child: Center(
                                   child: key == 'backspace'
-                                      ? const Icon(
+                                      ? Icon(
                                           Icons.backspace_outlined,
-                                          color: Colors.white,
+                                          color: foreground,
                                           size: 22,
                                         )
                                       : Text(
                                           key,
-                                          style: const TextStyle(
-                                            color: Colors.white,
+                                          style: TextStyle(
+                                            color: foreground,
                                             fontSize: 26,
                                             fontWeight: FontWeight.w500,
                                           ),

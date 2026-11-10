@@ -14,6 +14,7 @@ import '../providers/server_provider.dart';
 import '../providers/wallet_provider.dart';
 import '../tools/logger_wrapper.dart';
 import 'data_source.dart';
+import 'pending_tx_retry.dart';
 
 enum ElectrumServerType { ssl, wss }
 
@@ -22,6 +23,20 @@ class ElectrumBackend extends DataSource {
   Timer? _reconnectTimer;
   Timer? _handshakeTimer;
   StreamSubscription? _offlineSubscription;
+  late final PendingTxRetry _pendingTxRetry = PendingTxRetry(
+    request: requestTxUpdate,
+    canRequest: () =>
+        !_closedIntentionally &&
+        _connection != null &&
+        _serverType != null &&
+        connectionState == BackendConnectionState.connected,
+    onExhausted: (txId) => LoggerWrapper.logWarn(
+      'ElectrumConnection',
+      'pendingTxRetry',
+      'Transaction still unavailable after bounded retries: $txId',
+    ),
+  );
+
   final WalletProvider walletProvider;
   final ServerProvider _servers;
   final StreamController _listenerNotifier = StreamController.broadcast();
@@ -318,6 +333,11 @@ class ElectrumBackend extends DataSource {
 
   @override
   Future<void> closeConnection([bool intentional = true]) async {
+    if (intentional) {
+      _pendingTxRetry.clear();
+    } else {
+      _pendingTxRetry.pause();
+    }
     if (_connection != null) {
       _closedIntentionally = intentional;
       if (_serverType == ElectrumServerType.ssl) {
@@ -344,6 +364,7 @@ class ElectrumBackend extends DataSource {
   }
 
   void cleanUpOnDone() {
+    _pendingTxRetry.pause();
     _pingTimer?.cancel();
     _pingTimer = null;
     _handshakeTimer?.cancel();
@@ -461,6 +482,7 @@ class ElectrumBackend extends DataSource {
       _handshakeTimer?.cancel();
       _handshakeTimer = null;
       updateConnectionState = BackendConnectionState.connected;
+      _pendingTxRetry.resume();
       sendMessage('blockchain.headers.subscribe', 'blocks');
     } else {
       LoggerWrapper.logWarn(
@@ -569,8 +591,8 @@ class ElectrumBackend extends DataSource {
       var res = walletTx.firstWhereOrNull(
         (element) => element.txid == utxo['tx_hash'],
       );
-      if (res == null) {
-        requestTxUpdate(utxo['tx_hash']);
+      if (res == null && utxo['tx_hash'] is String) {
+        _pendingTxRetry.track(utxo['tx_hash']);
       }
     }
   }
@@ -594,16 +616,33 @@ class ElectrumBackend extends DataSource {
   }
 
   void handleTx(String id, Map? tx) async {
-    var txId = id.replaceFirst('tx_', '');
-    var addr = await walletProvider.getAddressForTx(coinName, txId);
-    if (tx != null) {
+    final txId = id.replaceFirst('tx_', '');
+
+    if (tx == null) {
+      _pendingTxRetry.unavailable(txId);
+      LoggerWrapper.logWarn(
+        'ElectrumConnection',
+        'handleTx',
+        'Transaction unavailable: $txId',
+      );
+      return;
+    }
+
+    try {
+      final addr = await walletProvider.getAddressForTx(coinName, txId);
       await walletProvider.putTx(
         identifier: coinName,
         address: addr,
         tx: tx,
       );
-    } else {
-      LoggerWrapper.logWarn('ElectrumConnection', 'handleTx', 'tx not found');
+      _pendingTxRetry.succeeded(txId);
+    } catch (error) {
+      _pendingTxRetry.unavailable(txId);
+      LoggerWrapper.logError(
+        'ElectrumConnection',
+        'handleTx',
+        'Transaction processing failed: $error',
+      );
     }
   }
 
@@ -628,6 +667,7 @@ class ElectrumBackend extends DataSource {
   }
 
   void dispose() {
+    _pendingTxRetry.dispose();
     _listenerNotifier.close();
     _pingTimer?.cancel();
     _reconnectTimer?.cancel();

@@ -32,7 +32,8 @@ import '../../widgets/logout_dialog_dummy.dart'
     if (dart.library.html) '../../widgets/logout_dialog.dart';
 import '../../widgets/spinning_digibyte_icon.dart';
 import '../secure_storage_error_screen.dart';
-import '../../widgets/wallet/new_wallet.dart';
+// 0.1.6: Add Wallet flow temporarily disabled.
+// import '../../widgets/wallet/new_wallet.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 // Remove "const" if BannerAdWidget doesn't have a const constructor
@@ -168,6 +169,8 @@ class _WalletListScreenState extends State<WalletListScreen>
               );
             },
           ), */
+          // 0.1.6: Preserve Add Wallet button for future multi-wallet support.
+          /*
           IconButton(
             key: const Key('newWalletIconButton'),
             onPressed: () {
@@ -175,6 +178,7 @@ class _WalletListScreenState extends State<WalletListScreen>
             },
             icon: const Icon(Icons.add_rounded),
           ),
+          */
           if (kIsWeb)
             IconButton(
               key: const Key('logoutButton'),
@@ -319,6 +323,8 @@ class _WalletListScreenState extends State<WalletListScreen>
                                           Routes.appSettingsWalletScanner,
                                         ),
                                       ),
+                                    // 0.1.6: Preserve disabled Add Wallet CTA and its spacing.
+                                    /*
                                     const SizedBox(height: 20),
                                     PeerButtonBorder(
                                       text: AppLocalizations.instance.translate(
@@ -326,6 +332,7 @@ class _WalletListScreenState extends State<WalletListScreen>
                                       ),
                                       action: () => _showWalletDialog(context),
                                     ),
+                                    */
                                   ],
                                 ),
                               ),
@@ -784,6 +791,8 @@ class _WalletListScreenState extends State<WalletListScreen>
     _nOfHiddenWallets = values.where((wallet) => wallet.hidden).length;
   }
 
+  // 0.1.6: Keep dormant dialog implementation for future multi-wallet support.
+  /*
   void _showWalletDialog(BuildContext context) {
     if (_initial == false) {
       showDialog(
@@ -794,6 +803,7 @@ class _WalletListScreenState extends State<WalletListScreen>
       );
     }
   }
+  */
 
   void _toggleHiddenWallets() {
     setState(() {

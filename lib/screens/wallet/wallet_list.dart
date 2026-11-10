@@ -262,7 +262,7 @@ class _WalletListScreenState extends State<WalletListScreen>
                         ),
                         const SizedBox(height: 40),
 
-                        if (_nOfHiddenWallets > 0)
+                        if (_nOfHiddenWallets > 0 && !_showHiddenWallets)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 6),
                             child: TextButton.icon(
@@ -271,20 +271,10 @@ class _WalletListScreenState extends State<WalletListScreen>
                               style: TextButton.styleFrom(
                                 foregroundColor: Colors.white,
                               ),
-                              icon: Icon(
-                                _showHiddenWallets
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                              ),
+                              icon: const Icon(Icons.visibility),
                               label: Text(
                                 AppLocalizations.instance.translate(
-                                  _showHiddenWallets
-                                      ? 'hide_hidden_wallets_list'
-                                      : 'show_hidden_wallets_list',
-                                  {
-                                    'nOfHiddenWallets':
-                                        _nOfHiddenWallets.toString(),
-                                  },
+                                  'show_hidden_wallet',
                                 ),
                               ),
                             ),
@@ -296,21 +286,20 @@ class _WalletListScreenState extends State<WalletListScreen>
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text(
-                                      AppLocalizations.instance.translate(
-                                        _nOfHiddenWallets > 0
-                                            ? 'wallet_hidden_feedback'
-                                            : 'wallets_none',
+                                    if (_nOfHiddenWallets == 0)
+                                      Text(
+                                        AppLocalizations.instance.translate(
+                                          'wallets_none',
+                                        ),
+                                        key: const Key('noActiveWallets'),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontStyle: FontStyle.italic,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .surface,
+                                        ),
                                       ),
-                                      key: const Key('noActiveWallets'),
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontStyle: FontStyle.italic,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .surface,
-                                      ),
-                                    ),
                                     if (_importedSeed)
                                       const SizedBox(height: 20),
                                     if (_importedSeed)

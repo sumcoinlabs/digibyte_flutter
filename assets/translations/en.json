@@ -535,6 +535,7 @@
   "unhide_wallet_description": "This will unhide the wallet and show it in the wallet list again.",
   "hide_hidden_wallets_list": "Collapse hidden wallets",
   "show_hidden_wallets_list": "Show hidden wallets ($nOfHiddenWallets)",
+  "show_hidden_wallet": "Show Hidden Wallet",
   "wallet_hidden_feedback": "Wallet hidden. Use the wallet list to unhide it.",
   "wallet_unhidden_feedback": "Wallet unhidden.",
   "wallet_visibility_failed": "Could not update wallet visibility.",

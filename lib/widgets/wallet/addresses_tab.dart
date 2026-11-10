@@ -44,9 +44,9 @@ class _AddressTabState extends State<AddressTab> {
   bool _search = false;
   bool _showChangeAddresses = true;
   bool _optionsExpanded = false;
-  bool _showLabel = true;
+  bool _showLabel = false;
   bool _showUsed = true;
-  bool _showEmpty = true;
+  bool _showEmpty = false;
   bool _showUnwatched = false;
   bool _showSendingAddresses = true;
   final Map _addressBalanceMap = {};

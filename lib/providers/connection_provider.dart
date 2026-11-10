@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../data_sources/data_source.dart';
@@ -6,11 +8,22 @@ enum BackendConnectionState { waiting, connected, offline }
 
 class ConnectionProvider with ChangeNotifier {
   late DataSource _dataSource;
+  StreamSubscription<dynamic>? _dataSourceSubscription;
+  Timer? _initialConnectionTimer;
+  bool _connectionWaitExpired = false;
 
   // Method to switch the data source.
   void setDataSource(DataSource newDataSource) {
+    _dataSourceSubscription?.cancel();
     _dataSource = newDataSource;
-    _dataSource.listenerNotifierStream().listen((event) {
+    _initialConnectionTimer?.cancel();
+    _connectionWaitExpired = false;
+    _initialConnectionTimer = Timer(const Duration(seconds: 5), () {
+      _connectionWaitExpired = true;
+      notifyListeners();
+    });
+    _dataSourceSubscription =
+        _dataSource.listenerNotifierStream().listen((event) {
       notifyListeners();
     });
   }
@@ -28,9 +41,19 @@ class ConnectionProvider with ChangeNotifier {
     );
   }
 
-  BackendConnectionState get connectionState => _dataSource.connectionState;
+  BackendConnectionState get connectionState {
+    final actual = _dataSource.connectionState;
+    if (_connectionWaitExpired && actual == BackendConnectionState.waiting) {
+      return BackendConnectionState.offline;
+    }
+    return actual;
+  }
 
   Future<void> closeConnection([bool intentional = true]) async {
+    if (intentional) {
+      _initialConnectionTimer?.cancel();
+      _initialConnectionTimer = null;
+    }
     await _dataSource.closeConnection(intentional);
   }
 
@@ -66,5 +89,12 @@ class ConnectionProvider with ChangeNotifier {
 
   void requestTxUpdate(String txId) {
     _dataSource.requestTxUpdate(txId);
+  }
+
+  @override
+  void dispose() {
+    _initialConnectionTimer?.cancel();
+    _dataSourceSubscription?.cancel();
+    super.dispose();
   }
 }

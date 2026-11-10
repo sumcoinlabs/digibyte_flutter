@@ -429,7 +429,7 @@
   "wallet_bottom_nav_send": "Send",
   "wallet_bottom_nav_tx": "Transactions",
   "wallet_connected": "Connected",
-  "wallet_offline": "offline",
+  "wallet_offline": "Offline",
   "wallet_pop_menu_paperwallet": "Sweep Paper Wallet",
   "wallet_pop_menu_wif": "Import Private Key",
   "wallet_pop_menu_signing": "Sign Messages",

@@ -198,7 +198,7 @@ class _WalletHomeState extends State<WalletHomeScreen>
             _wallet.name,
             requestedFromWalletHome: true,
           )
-          .timeout(const Duration(seconds: 12));
+          .timeout(const Duration(seconds: 5));
     } catch (error) {
       LoggerWrapper.logWarn(
         'WalletHome',

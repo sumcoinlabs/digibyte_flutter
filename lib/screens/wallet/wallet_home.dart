@@ -606,7 +606,15 @@ class _WalletHomeState extends State<WalletHomeScreen>
               final messenger = ScaffoldMessenger.of(this.context);
 
               Navigator.of(sheetContext).pop();
-              navigator.pop();
+
+              if (hiding) {
+                // Hide: leave the wallet screen for the wallet list.
+                navigator.pop();
+              } else {
+                // Unhide: stay inside the wallet instead of returning
+                // to a stale, expanded hidden-wallet list.
+                setState(() {});
+              }
 
               messenger.showSnackBar(
                 SnackBar(

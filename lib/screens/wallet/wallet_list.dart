@@ -298,7 +298,9 @@ class _WalletListScreenState extends State<WalletListScreen>
                                   children: [
                                     Text(
                                       AppLocalizations.instance.translate(
-                                        'wallets_none',
+                                        _nOfHiddenWallets > 0
+                                            ? 'wallet_hidden_feedback'
+                                            : 'wallets_none',
                                       ),
                                       key: const Key('noActiveWallets'),
                                       style: TextStyle(
@@ -785,10 +787,18 @@ class _WalletListScreenState extends State<WalletListScreen>
     final order = _appSettings.walletOrder;
     values
         .sort((a, b) => order.indexOf(a.name).compareTo(order.indexOf(b.name)));
+    final hiddenCount = values.where((wallet) => wallet.hidden).length;
+
+    // 0.1.6: Never retain an expanded hidden-wallet state after
+    // the last hidden wallet has been unhidden.
+    if (hiddenCount == 0) {
+      _showHiddenWallets = false;
+    }
+
+    _nOfHiddenWallets = hiddenCount;
     _activeWalletsOrdered = _showHiddenWallets
         ? values
         : values.where((wallet) => !wallet.hidden).toList();
-    _nOfHiddenWallets = values.where((wallet) => wallet.hidden).length;
   }
 
   // 0.1.6: Keep dormant dialog implementation for future multi-wallet support.

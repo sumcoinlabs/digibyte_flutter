@@ -10,10 +10,15 @@ class WalletHomeQr extends StatelessWidget {
   final String _unusedAddress;
   const WalletHomeQr(this._unusedAddress, {Key? key}) : super(key: key);
 
+  static void showWifQrDialog(BuildContext context, String wif) {
+    showQrDialog(context, wif, false, true);
+  }
+
   static void showQrDialog(
     BuildContext context,
     String address, [
     bool hideShareButton = false,
+    bool isWif = false,
   ]) {
     showDialog(
       context: context,
@@ -37,17 +42,36 @@ class WalletHomeQr extends StatelessWidget {
                   ),
                   if (!hideShareButton)
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: FittedBox(
-                        child: DoubleTabToClipboard(
-                          withHintText: true, // Provide a value for withHintText
-                          clipBoardData: address,
-                          child: SelectableText(
-                            address,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
+                      padding: isWif
+                          ? const EdgeInsets.fromLTRB(12, 8, 12, 14)
+                          : const EdgeInsets.all(8.0),
+                      child: isWif
+                          ? DoubleTabToClipboard(
+                              withHintText: true,
+                              clipBoardData: address,
+                              child: SelectableText(
+                                address,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                            )
+                          : FittedBox(
+                              child: DoubleTabToClipboard(
+                                withHintText: true,
+                                clipBoardData: address,
+                                child: SelectableText(
+                                  address,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
                     ),
                   if (!hideShareButton)
                     PeerButtonBorder(
@@ -56,7 +80,8 @@ class WalletHomeQr extends StatelessWidget {
                         message: address,
                         popNavigator: true,
                       ),
-                      text: AppLocalizations.instance.translate('receive_share'),
+                      text:
+                          AppLocalizations.instance.translate('receive_share'),
                     ),
                 ],
               ),

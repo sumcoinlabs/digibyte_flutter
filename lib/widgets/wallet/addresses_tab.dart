@@ -44,9 +44,9 @@ class _AddressTabState extends State<AddressTab> {
   bool _search = false;
   bool _showChangeAddresses = true;
   bool _optionsExpanded = false;
-  bool _showLabel = true;
+  bool _showLabel = false;
   bool _showUsed = true;
-  bool _showEmpty = true;
+  bool _showEmpty = false;
   bool _showUnwatched = false;
   bool _showSendingAddresses = true;
   final Map _addressBalanceMap = {};
@@ -254,7 +254,7 @@ class _AddressTabState extends State<AddressTab> {
                 String wif;
                 final navigator = Navigator.of(context);
                 void showQrDialog(wif) =>
-                    WalletHomeQr.showQrDialog(context, wif);
+                    WalletHomeQr.showWifQrDialog(context, wif);
 
                 if (address.wif.isEmpty) {
                   wif = await context.read<WalletProvider>().getWif(

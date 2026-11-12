@@ -32,7 +32,8 @@ import '../../widgets/logout_dialog_dummy.dart'
     if (dart.library.html) '../../widgets/logout_dialog.dart';
 import '../../widgets/spinning_digibyte_icon.dart';
 import '../secure_storage_error_screen.dart';
-import '../../widgets/wallet/new_wallet.dart';
+// 0.1.6: Add Wallet flow temporarily disabled.
+// import '../../widgets/wallet/new_wallet.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 // Remove "const" if BannerAdWidget doesn't have a const constructor
@@ -168,6 +169,8 @@ class _WalletListScreenState extends State<WalletListScreen>
               );
             },
           ), */
+          // 0.1.6: Preserve Add Wallet button for future multi-wallet support.
+          /*
           IconButton(
             key: const Key('newWalletIconButton'),
             onPressed: () {
@@ -175,6 +178,7 @@ class _WalletListScreenState extends State<WalletListScreen>
             },
             icon: const Icon(Icons.add_rounded),
           ),
+          */
           if (kIsWeb)
             IconButton(
               key: const Key('logoutButton'),
@@ -258,7 +262,7 @@ class _WalletListScreenState extends State<WalletListScreen>
                         ),
                         const SizedBox(height: 40),
 
-                        if (_nOfHiddenWallets > 0)
+                        if (_nOfHiddenWallets > 0 && !_showHiddenWallets)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 6),
                             child: TextButton.icon(
@@ -267,20 +271,10 @@ class _WalletListScreenState extends State<WalletListScreen>
                               style: TextButton.styleFrom(
                                 foregroundColor: Colors.white,
                               ),
-                              icon: Icon(
-                                _showHiddenWallets
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                              ),
+                              icon: const Icon(Icons.visibility),
                               label: Text(
                                 AppLocalizations.instance.translate(
-                                  _showHiddenWallets
-                                      ? 'hide_hidden_wallets_list'
-                                      : 'show_hidden_wallets_list',
-                                  {
-                                    'nOfHiddenWallets':
-                                        _nOfHiddenWallets.toString(),
-                                  },
+                                  'show_hidden_wallet',
                                 ),
                               ),
                             ),
@@ -292,19 +286,20 @@ class _WalletListScreenState extends State<WalletListScreen>
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text(
-                                      AppLocalizations.instance.translate(
-                                        'wallets_none',
+                                    if (_nOfHiddenWallets == 0)
+                                      Text(
+                                        AppLocalizations.instance.translate(
+                                          'wallets_none',
+                                        ),
+                                        key: const Key('noActiveWallets'),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontStyle: FontStyle.italic,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .surface,
+                                        ),
                                       ),
-                                      key: const Key('noActiveWallets'),
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontStyle: FontStyle.italic,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .surface,
-                                      ),
-                                    ),
                                     if (_importedSeed)
                                       const SizedBox(height: 20),
                                     if (_importedSeed)
@@ -319,6 +314,8 @@ class _WalletListScreenState extends State<WalletListScreen>
                                           Routes.appSettingsWalletScanner,
                                         ),
                                       ),
+                                    // 0.1.6: Preserve disabled Add Wallet CTA and its spacing.
+                                    /*
                                     const SizedBox(height: 20),
                                     PeerButtonBorder(
                                       text: AppLocalizations.instance.translate(
@@ -326,6 +323,7 @@ class _WalletListScreenState extends State<WalletListScreen>
                                       ),
                                       action: () => _showWalletDialog(context),
                                     ),
+                                    */
                                   ],
                                 ),
                               ),
@@ -402,16 +400,6 @@ class _WalletListScreenState extends State<WalletListScreen>
                                                         bottom: 0,
                                                         child: Icon(
                                                           Icons.visibility,
-                                                          size: 16,
-                                                          color: Colors.black,
-                                                        ),
-                                                      ),
-                                                    if (wallet.hidden)
-                                                      const Positioned(
-                                                        right: 0,
-                                                        top: 0,
-                                                        child: Icon(
-                                                          Icons.visibility_off,
                                                           size: 16,
                                                           color: Colors.black,
                                                         ),
@@ -778,12 +766,22 @@ class _WalletListScreenState extends State<WalletListScreen>
     final order = _appSettings.walletOrder;
     values
         .sort((a, b) => order.indexOf(a.name).compareTo(order.indexOf(b.name)));
+    final hiddenCount = values.where((wallet) => wallet.hidden).length;
+
+    // 0.1.6: Never retain an expanded hidden-wallet state after
+    // the last hidden wallet has been unhidden.
+    if (hiddenCount == 0) {
+      _showHiddenWallets = false;
+    }
+
+    _nOfHiddenWallets = hiddenCount;
     _activeWalletsOrdered = _showHiddenWallets
         ? values
         : values.where((wallet) => !wallet.hidden).toList();
-    _nOfHiddenWallets = values.where((wallet) => wallet.hidden).length;
   }
 
+  // 0.1.6: Keep dormant dialog implementation for future multi-wallet support.
+  /*
   void _showWalletDialog(BuildContext context) {
     if (_initial == false) {
       showDialog(
@@ -794,6 +792,7 @@ class _WalletListScreenState extends State<WalletListScreen>
       );
     }
   }
+  */
 
   void _toggleHiddenWallets() {
     setState(() {

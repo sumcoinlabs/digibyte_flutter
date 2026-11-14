@@ -10,17 +10,20 @@ import '../../providers/connection_provider.dart';
 import '../../tools/price_ticker.dart';
 import 'wallet_home/wallet_home_connection.dart';
 import 'wallet_balance_price.dart';
+import 'dgb_24h_change_indicator.dart';
 
 class WalletBalanceHeader extends StatelessWidget {
   final BackendConnectionState _connectionState;
   final CoinWallet _wallet;
 
   final bool compact;
+  final bool showMarketChange;
 
   const WalletBalanceHeader(
     this._connectionState,
     this._wallet, {
     this.compact = false,
+    this.showMarketChange = false,
     super.key,
   });
 
@@ -193,6 +196,13 @@ class WalletBalanceHeader extends StatelessWidget {
               ),
             ),
           ),
+
+          // Independent, single-line 24h market change and attribution.
+          // Do not insert inside the rotating fiat balance widget.
+          if (showMarketChange &&
+              settings.selectedCurrency.isNotEmpty &&
+              _wallet.letterCode == 'DGB')
+            const Dgb24hChangeIndicator(),
 
           if (_wallet.unconfirmedBalance > 0)
             Padding(

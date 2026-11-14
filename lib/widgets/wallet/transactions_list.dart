@@ -113,24 +113,23 @@ class _TransactionListState extends State<TransactionList> {
 
     return Stack(
       children: [
-        // Wallet Balance Header at the top
-        WalletBalanceHeader(
-          widget.connectionState,
-          widget.wallet,
-        ),
-
-        // Main content
+        // The header is part of the list's first item, not a floating overlay.
+        // This lets the entire header scroll away with transaction history.
         widget.walletTransactions
                 .where((element) =>
                     element.timestamp !=
                     -1) // Filter out "phantom" transactions
                 .isEmpty
             ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height / 8,
+                  WalletBalanceHeader(
+                    widget.connectionState,
+                    widget.wallet,
+                    compact: true,
+                    showMarketChange: true,
                   ),
+                  const SizedBox(height: 16),
                   Image.asset(
                     'assets/img/list-empty.png',
                     height: MediaQuery.of(context).size.height / 4,
@@ -298,15 +297,14 @@ class _TransactionListState extends State<TransactionList> {
                             widget.walletTransactions.isNotEmpty) {
                           return Column(
                             children: [
-                              SizedBox(
-                                height: widget.wallet.unconfirmedBalance > 0
-                                    ? 125
-                                    : 110,
+                              // Natural layout: no magic heights or overlap.
+                              WalletBalanceHeader(
+                                widget.connectionState,
+                                widget.wallet,
+                                compact: true,
+                                showMarketChange: true,
                               ),
-                              // Add spacing between the WalletBalanceHeader and the filter buttons
-                              SizedBox(
-                                height: 60, // Space between balance and filters
-                              ),
+                              const SizedBox(height: 4),
                               // Add filter buttons
                               Container(
                                 color: Theme.of(context).primaryColor,

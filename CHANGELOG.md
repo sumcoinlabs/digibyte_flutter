@@ -1,3 +1,12 @@
+### **0.1.6** (2026-11-14)
+- Wallets stay accessible when offline and reconnect when service returns.
+- Improved handling of pending transactions during connection problems.
+- Made hiding and unhiding wallets easier.
+- Simplified address filtering and cleaned up wallet controls.
+- Made private keys easier to read, copy, and share.
+- Added an automatically updating 24-hour DGB price change indicator with a backup data feed.
+- Other stability and usability improvements.
+
 ### **0.1.5** (2026-11-9)
 - Security: Updated Firebase dependencies to the compatible FlutterFire 4.20.2 release set.
 - Security: Patched Cloud Firestore certificate validation for the eMudhra CA compromise.

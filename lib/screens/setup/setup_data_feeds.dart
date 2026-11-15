@@ -9,6 +9,7 @@ import '../../providers/app_settings_provider.dart';
 import '../../tools/app_localizations.dart';
 import '../../tools/app_routes.dart';
 import '../../widgets/buttons.dart';
+import '../../widgets/setup/setup_contrast_switch_tile.dart';
 import 'setup_landing.dart';
 
 class SetupDataFeedsScreen extends StatefulWidget {
@@ -28,7 +29,7 @@ class _SetupDataFeedsScreenState extends State<SetupDataFeedsScreen> {
   }
 
   bool _dataFeedAllowed = true; // Set to true by default
-  bool _bgSyncdAllowed = true;  // Set to true by default
+  bool _bgSyncdAllowed = true; // Set to true by default
   bool _initial = true;
   late AppSettingsProvider _settings;
 
@@ -125,18 +126,11 @@ class _SetupDataFeedsScreenState extends State<SetupDataFeedsScreen> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: SwitchListTile(
+                        child: SetupContrastSwitchTile(
                           key: const Key('setupApiTickerSwitchKey'),
-                          title: Text(
-                            AppLocalizations.instance
-                                .translate('setup_price_feed_allow'),
-                            style: const TextStyle(
-                              color: Colors.white,
-                            ),
-                          ),
+                          title: AppLocalizations.instance
+                              .translate('setup_price_feed_allow'),
                           value: _dataFeedAllowed,
-                          activeColor: Colors.white,
-                          inactiveThumbColor: Colors.grey,
                           onChanged: togglePriceTickerHandler,
                         ),
                       ),
@@ -148,16 +142,11 @@ class _SetupDataFeedsScreenState extends State<SetupDataFeedsScreen> {
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: SwitchListTile(
+                        child: SetupContrastSwitchTile(
                           key: const Key('setupApiBGSwitchKey'),
-                          title: Text(
-                            AppLocalizations.instance
-                                .translate('setup_bg_sync_allow'),
-                            style: const TextStyle(color: Colors.white),
-                          ),
+                          title: AppLocalizations.instance
+                              .translate('setup_bg_sync_allow'),
                           value: _bgSyncdAllowed,
-                          activeColor: Colors.white,
-                          inactiveThumbColor: Colors.grey,
                           onChanged: toggleBGSyncHandler,
                         ),
                       ),
@@ -172,6 +161,7 @@ class _SetupDataFeedsScreenState extends State<SetupDataFeedsScreen> {
                 ),
               ),
               PeerButton(
+                onPrimaryBackground: true,
                 action: () => _launchURL(
                   'https://github.com/sumcoinlabs/digibyte_flutter/blob/main/data_protection.md',
                 ),

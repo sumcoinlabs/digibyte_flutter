@@ -1,25 +1,30 @@
 import 'package:flutter/material.dart';
 
-
 class PeerButton extends StatelessWidget {
   final Function() action;
   final String text;
   final bool small;
   final bool active;
+  final bool onPrimaryBackground;
   const PeerButton({
     super.key,
     required this.text,
     required this.action,
     this.small = false,
     this.active = true,
+    this.onPrimaryBackground = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: onPrimaryBackground
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.onPrimary,
+        backgroundColor: onPrimaryBackground
+            ? Theme.of(context).colorScheme.onPrimary
+            : Theme.of(context).colorScheme.primary,
         minimumSize: Size(
           MediaQuery.of(context).size.width > 768
               ? MediaQuery.of(context).size.width / 4
@@ -36,7 +41,9 @@ class PeerButton extends StatelessWidget {
         style: TextStyle(
           letterSpacing: 1.4,
           color: active
-              ? Theme.of(context).colorScheme.onPrimary
+              ? (onPrimaryBackground
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onPrimary)
               : Theme.of(context).disabledColor,
         ),
       ),
@@ -70,13 +77,13 @@ class PeerButtonBorder extends StatelessWidget {
       ),
       onPressed: action,
       child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            letterSpacing: 1.4,
-            fontSize: 16,
-            color: Theme.of(context).primaryColor,
-          ),
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          letterSpacing: 1.4,
+          fontSize: 16,
+          color: Theme.of(context).primaryColor,
+        ),
       ),
     );
   }
@@ -98,10 +105,9 @@ class PeerButtonSetup extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        backgroundColor: active
-            ? Theme.of(context).colorScheme.primary
-            : Theme.of(context).disabledColor,
+        foregroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor:
+            active ? Theme.of(context).colorScheme.onPrimary : Colors.white70,
         minimumSize: Size(
           MediaQuery.of(context).size.width > 768
               ? MediaQuery.of(context).size.width / 4
@@ -113,16 +119,16 @@ class PeerButtonSetup extends StatelessWidget {
           borderRadius: BorderRadius.circular(30),
         ),
       ),
-      onPressed: action,
+      onPressed: active ? action : null,
       child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            letterSpacing: 1.2,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: Theme.of(context).colorScheme.onPrimary,
-          ),
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          letterSpacing: 1.2,
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
     );
   }
@@ -159,23 +165,23 @@ class PeerButtonSetupLoading extends StatelessWidget {
       ),
       onPressed: onPressed,
       child: loading
-            ? SizedBox(
-                height: 18,
-                width: 18,
-                child: CircularProgressIndicator(
-                  color: Theme.of(context).colorScheme.secondary,
-                  strokeWidth: 3,
-                ),
-              )
-            : Text(
-                text,
-                style: TextStyle(
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
+          ? SizedBox(
+              height: 18,
+              width: 18,
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.secondary,
+                strokeWidth: 3,
               ),
+            )
+          : Text(
+              text,
+              style: TextStyle(
+                letterSpacing: 1.2,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
+            ),
     );
   }
 

@@ -66,7 +66,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     if (Platform.isIOS) {
       return 'ca-app-pub-1492791099222955/1323875636';
     } else if (Platform.isAndroid) {
-      return 'ca-app-pub-1492791099222955/7755420606';
+      return 'ca-app-pub-1492791099222955/7314064564';
     }
     return 'your_default_ad_unit_id';
   }

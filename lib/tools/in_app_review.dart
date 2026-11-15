@@ -9,6 +9,14 @@ import 'package:url_launcher/url_launcher.dart';
 /// Pure, deterministic policy: no wallet data or StoreKit state is inspected.
 class ReviewPromptPolicy {
   static const cooldown = Duration(days: 45);
+  // A user who deliberately opens the App Store gets a respectful quiet period.
+  // This never consumes an automatic request or marks a review as submitted.
+  static const manualOpenCooldown = Duration(days: 30);
+
+  static bool matchesAutomaticAttempt(DateTime? recorded, DateTime? automatic) {
+    if (recorded == null || automatic == null) return false;
+    return recorded.difference(automatic).inMilliseconds.abs() <= 2000;
+  }
 
   static bool eligible({
     required DateTime now,
@@ -18,6 +26,7 @@ class ReviewPromptPolicy {
     required String version,
     required String? previousVersion,
     required DateTime? lastAttempt,
+    DateTime? lastManualOpen,
     required List<DateTime> attempts,
   }) {
     if (sessions < (returningUser ? 2 : 4)) return false;
@@ -25,6 +34,11 @@ class ReviewPromptPolicy {
       return false;
     }
     if (previousVersion == version) return false;
+    if (lastManualOpen != null &&
+        (now.isBefore(lastManualOpen) ||
+            now.difference(lastManualOpen) < manualOpenCooldown)) {
+      return false;
+    }
     if (lastAttempt != null &&
         (now.isBefore(lastAttempt) || now.difference(lastAttempt) < cooldown)) {
       return false;
@@ -61,7 +75,8 @@ class InAppReviewService {
       final now = DateTime.now().millisecondsSinceEpoch;
       if (!prefs.containsKey('${_prefix}first_seen')) {
         await prefs.setInt('${_prefix}first_seen', now);
-        final returningUser = (prefs.getBool('reviewSubmitted') ?? false) ||
+        final returningUser =
+            (prefs.getBool('reviewSubmitted') ?? false) ||
             (prefs.getInt('appOpens') ?? 0) >= 8;
         await prefs.setBool('${_prefix}returning', returningUser);
       }
@@ -97,18 +112,46 @@ class InAppReviewService {
           .map(DateTime.tryParse)
           .whereType<DateTime>()
           .toList();
+      // Automatic requests are recorded in `attempts`. Older builds also
+      // stored *manual App Store visits* in last_attempt / last_version,
+      // so use the list as the source of truth and recover any manual visit.
+      final lastAutomaticAttempt = attempts.isEmpty
+          ? null
+          : attempts.reduce((a, b) => a.isAfter(b) ? a : b);
       final previousAttempt = prefs.getInt('${_prefix}last_attempt');
-      final lastAttempt = previousAttempt == null
+      final recordedAttempt = previousAttempt == null
           ? null
           : DateTime.fromMillisecondsSinceEpoch(previousAttempt);
+      final recordedWasAutomatic = ReviewPromptPolicy.matchesAutomaticAttempt(
+        recordedAttempt,
+        lastAutomaticAttempt,
+      );
+      final previousAutomaticVersion =
+          prefs.getString('${_prefix}last_auto_version') ??
+          (recordedWasAutomatic
+              ? prefs.getString('${_prefix}last_version')
+              : null);
+      final previousManualOpen = prefs.getInt('${_prefix}last_manual_open');
+      DateTime? lastManualOpen = previousManualOpen == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(previousManualOpen);
+      if (recordedAttempt != null &&
+          (lastAutomaticAttempt == null ||
+              recordedAttempt.isAfter(
+                lastAutomaticAttempt.add(const Duration(seconds: 2)),
+              )) &&
+          (lastManualOpen == null || recordedAttempt.isAfter(lastManualOpen))) {
+        lastManualOpen = recordedAttempt;
+      }
       final eligible = ReviewPromptPolicy.eligible(
         now: now,
         firstSeen: DateTime.fromMillisecondsSinceEpoch(firstSeen),
         sessions: prefs.getInt('${_prefix}sessions') ?? 0,
         returningUser: prefs.getBool('${_prefix}returning') ?? false,
         version: package.version,
-        previousVersion: prefs.getString('${_prefix}last_version'),
-        lastAttempt: lastAttempt,
+        previousVersion: previousAutomaticVersion,
+        lastAttempt: lastAutomaticAttempt,
+        lastManualOpen: lastManualOpen,
         attempts: attempts,
       );
       if (!eligible) return;
@@ -128,6 +171,7 @@ class InAppReviewService {
       await prefs.setStringList('${_prefix}attempts', recent);
       await prefs.setInt('${_prefix}last_attempt', now.millisecondsSinceEpoch);
       await prefs.setString('${_prefix}last_version', package.version);
+      await prefs.setString('${_prefix}last_auto_version', package.version);
       await reviewer.requestReview();
     } catch (_) {
       // A suppressed or unavailable prompt must never interrupt wallet use.
@@ -160,14 +204,15 @@ class InAppReviewService {
     try {
       final opened = await launchUrl(url, mode: LaunchMode.externalApplication);
       if (opened) {
-        final prefs = await SharedPreferences.getInstance();
-        final package = await PackageInfo.fromPlatform();
-        final now = DateTime.now();
-        await prefs.setInt(
-            '${_prefix}last_attempt', now.millisecondsSinceEpoch);
-        await prefs.setString('${_prefix}last_version', package.version);
-        // This is not an in-app prompt attempt; don't count it toward our
-        // automatic 4-per-year attempt budget.
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setInt(
+            '${_prefix}last_manual_open',
+            DateTime.now().millisecondsSinceEpoch,
+          );
+        } catch (_) {
+          // The App Store opened successfully even if preference storage fails.
+        }
       }
       return opened;
     } catch (_) {

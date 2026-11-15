@@ -119,7 +119,7 @@ class MyTheme {
         brightness: Brightness.light,
         tertiary: LightColors.warning,
       ),
-      bottomAppBarTheme: BottomAppBarTheme(color: LightColors.background),
+      bottomAppBarTheme: BottomAppBarThemeData(color: LightColors.background),
     ),
     ThemeMode.dark: ThemeData.dark().copyWith(
       useMaterial3: false,
@@ -260,7 +260,7 @@ class MyTheme {
         brightness: Brightness.dark,
         tertiary: DarkColors.warning,
       ),
-      bottomAppBarTheme: BottomAppBarTheme(color: DarkColors.background),
+      bottomAppBarTheme: BottomAppBarThemeData(color: DarkColors.background),
     ),
   };
 

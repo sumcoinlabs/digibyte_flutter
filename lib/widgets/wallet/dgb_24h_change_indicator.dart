@@ -158,9 +158,9 @@ class _Dgb24hChangeIndicatorState extends State<Dgb24hChangeIndicator>
     final color = percent == null || item?.stale == true
         ? neutral
         : percent > 0
-            ? const Color(0xFF38C172)
+            ? const Color(0xFFA4E8B2)
             : percent < 0
-                ? Colors.red
+                ? const Color(0xFFFFC5A0)
                 : neutral;
 
     final formatted = percent == null
@@ -218,7 +218,7 @@ class _Dgb24hChangeIndicatorState extends State<Dgb24hChangeIndicator>
                       value,
                       key: const Key('dgb24hChangeLabel'),
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: color,
                       ),

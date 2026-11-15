@@ -205,7 +205,8 @@ void main() {
     final title = tester.widget<Text>(find.text('24hr:'));
     expect(title.style?.color, Colors.grey[300]);
     final change = tester.widget<Text>(find.text('-3.14%'));
-    expect(change.style?.color, Colors.red);
+    expect(change.style?.color, const Color(0xFFFFC5A0));
+    expect(change.style?.fontSize, 18);
     expect(find.byIcon(Icons.info_outline_rounded), findsOneWidget);
     expect(find.textContaining('Binance'), findsNothing);
     await tester.tap(find.byIcon(Icons.info_outline_rounded));
@@ -226,7 +227,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
     expect(tester.widget<Text>(find.text('+3.21%')).style?.color,
-        const Color(0xFF38C172));
+        const Color(0xFFA4E8B2));
     await tester.pumpWidget(const SizedBox.shrink());
 
     // Start with an empty cache when testing complete feed failure.

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:app_bar_with_search_switch/app_bar_with_search_switch.dart';
@@ -25,6 +26,7 @@ import '../../tools/app_localizations.dart';
 import '../../tools/app_routes.dart';
 import '../../tools/auth.dart';
 import '../../tools/logger_wrapper.dart';
+import '../../tools/in_app_review.dart';
 import '../../tools/price_ticker.dart';
 import '../../widgets/loading_indicator.dart';
 import '../../widgets/wallet/addresses_tab.dart';
@@ -63,6 +65,7 @@ class _WalletHomeState extends State<WalletHomeScreen>
   String? _address;
   String? _label;
   String _searchString = '';
+  Timer? _reviewTimer;
 
   void changeTab(WalletTab t, [String? addr, String? lab]) {
     setState(() {
@@ -71,6 +74,27 @@ class _WalletHomeState extends State<WalletHomeScreen>
         _address = addr;
         _label = lab;
       }
+    });
+    if (t == WalletTab.transactions) {
+      _scheduleReviewCheck();
+    } else {
+      _reviewTimer?.cancel();
+    }
+  }
+
+  // Only request a review after a stable, connected wallet has been visible.
+  // Avoid startup, active dialogs, send flows, and backgrounded applications.
+  void _scheduleReviewCheck() {
+    _reviewTimer?.cancel();
+    if (kIsWeb || !Platform.isIOS || !mounted) return;
+    _reviewTimer = Timer(const Duration(seconds: 12), () {
+      if (!mounted || _selectedTab != WalletTab.transactions ||
+          ModalRoute.of(context)?.isCurrent != true ||
+          _connectionState != BackendConnectionState.connected ||
+          WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+        return;
+      }
+      unawaited(InAppReviewService.instance.maybeRequestReview());
     });
   }
 
@@ -97,6 +121,7 @@ class _WalletHomeState extends State<WalletHomeScreen>
 
   @override
   void dispose() {
+    _reviewTimer?.cancel();
     _connectionProvider.closeConnection();
     _walletProvider.closeWallet(_wallet.name);
     WidgetsBinding.instance.removeObserver(this);
@@ -105,6 +130,7 @@ class _WalletHomeState extends State<WalletHomeScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
+    if (state != AppLifecycleState.resumed) _reviewTimer?.cancel();
     if (state == AppLifecycleState.resumed) {
       await _connectionProvider.init(
         _wallet.name,
@@ -115,6 +141,9 @@ class _WalletHomeState extends State<WalletHomeScreen>
         PriceTicker.checkUpdate(_appSettings);
       }
       checkPendingNotifications();
+      if (mounted && _selectedTab == WalletTab.transactions) {
+        _scheduleReviewCheck();
+      }
     }
   }
 
@@ -249,6 +278,11 @@ class _WalletHomeState extends State<WalletHomeScreen>
       });
 
       await _performInit();
+      if (!mounted) return;
+      if (!kIsWeb && Platform.isIOS) {
+        await InAppReviewService.instance.registerWalletSession();
+        _scheduleReviewCheck();
+      }
 
       // Start periodic updates for prices after initial setup
       PriceTicker.startPeriodicUpdates(_appSettings);

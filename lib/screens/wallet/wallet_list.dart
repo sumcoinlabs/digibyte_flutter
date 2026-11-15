@@ -25,6 +25,7 @@ import '../../tools/auth.dart';
 import '../../tools/background_sync.dart';
 import '../../tools/periodic_reminders.dart';
 import '../../tools/price_ticker.dart';
+import '../../tools/support_email.dart';
 import '../../tools/session_checker.dart';
 import '../../tools/share_wrapper.dart';
 import '../../widgets/buttons.dart';
@@ -561,25 +562,7 @@ class _WalletListScreenState extends State<WalletListScreen>
                 IconButton(
                   icon: Icon(Icons.email_rounded),
                   color: Colors.white,
-                  onPressed: () async {
-                    final subject = Uri.encodeComponent(
-                      'DigiByte Wallet - In App Mail',
-                    );
-                    final body = Uri.encodeComponent(
-                      'Hello Support,\n\n'
-                      '1. Describe your issue or question:\n'
-                      '2. Device Type:\n'
-                      '3. Have you seen any error messages?:\n\n'
-                      '**Please do not delete these questions, only reply to them!**\n'
-                      '**Reminder: Negative app store reviews will not help get an answer any faster.**\n',
-                    );
-                    final mailto =
-                        'mailto:digibytewalletorg@gmail.com?subject=$subject&body=$body';
-
-                    if (await canLaunchUrlString(mailto)) {
-                      await launchUrlString(mailto);
-                    }
-                  },
+                  onPressed: () => WalletSupportEmail.compose(context),
                 ),
               ],
             ),

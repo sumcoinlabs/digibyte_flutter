@@ -444,4 +444,43 @@ void main() {
       await tester.binding.setSurfaceSize(null);
     },
   );
+
+  testWidgets('refresh waits 60s after a delayed response', (tester) async {
+    var fakeNow = now;
+    var calls = 0;
+    final first = Completer<http.Response>();
+
+    final service = Dgb24hChangeService(
+      clock: () => fakeNow,
+      client: MockClient((request) {
+        calls++;
+        if (calls == 1) return first.future;
+        return Future.value(
+          http.Response(binance(fakeNow, calls.toDouble()), 200),
+        );
+      }),
+    );
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: Dgb24hChangeIndicator(service: service)),
+    ));
+    await tester.pump();
+    expect(calls, 1);
+
+    await tester.pump(const Duration(seconds: 2));
+    fakeNow = now.add(const Duration(seconds: 2));
+    first.complete(http.Response(binance(fakeNow, 1), 200));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.pump(const Duration(seconds: 59));
+    expect(calls, 1);
+
+    fakeNow = now.add(const Duration(seconds: 64));
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pump();
+    expect(calls, 2);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }

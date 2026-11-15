@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:mailto/mailto.dart';
 import 'package:digibyte/widgets/service_container.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -12,6 +11,8 @@ import 'package:url_launcher/url_launcher_string.dart';
 import '../providers/wallet_provider.dart';
 import '../tools/app_localizations.dart';
 import '../tools/app_routes.dart';
+import '../tools/in_app_review.dart';
+import '../tools/support_email.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -47,13 +48,7 @@ class _AboutScreenState extends State<AboutScreen> {
         : throw 'Could not launch $url';
   }
 
-  Future<void> launchMailto() async {
-    final mailtoLink = Mailto(
-      to: ['digibytewalletorg@gmail.com'],
-      subject: 'DigiByte Wallet - in app mail',
-    );
-    await launchUrlString('$mailtoLink');
-  }
+  Future<void> launchMailto() => WalletSupportEmail.compose(context);
 
   @override
   Widget build(BuildContext context) {
@@ -231,6 +226,20 @@ class _AboutScreenState extends State<AboutScreen> {
                           textAlign: TextAlign.center,
                         ),
                       ),
+                      if (!kIsWeb && Platform.isIOS)
+                        TextButton.icon(
+                          onPressed: () async {
+                            final opened = await InAppReviewService.instance
+                                .openAppStoreReview();
+                            if (!opened && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Unable to open App Store. Please try again later.')),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.star_outline),
+                          label: const Text('Write a review on the App Store'),
+                        ),
                       const Divider(),
                       const SizedBox(height: 10),
                       Text(

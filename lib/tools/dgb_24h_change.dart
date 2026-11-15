@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -163,6 +164,7 @@ class Dgb24hChangeService {
     final percent = _validPercent(quotes['USD']['percent_change_24h']);
     final updated = DateTime.tryParse('${decoded['last_updated']}')?.toUtc();
     _validateTime(updated, 'CoinPaprika');
+    if (kDebugMode) debugPrint('[DGB24H] CoinPaprika raw=${quotes['USD']['percent_change_24h']} percent=$percent updated=$updated');
     return Dgb24hSnapshot(
       percent: percent,
       source: 'CoinPaprika',
@@ -193,6 +195,7 @@ class Dgb24hChangeService {
       isUtc: true,
     );
     _validateTime(updated, 'Binance');
+    if (kDebugMode) debugPrint('[DGB24H] Binance raw=${decoded['priceChangePercent']} percent=$percent updated=$updated');
     return Dgb24hSnapshot(
       percent: percent,
       source: 'Binance DGB/USDT',
@@ -209,6 +212,7 @@ class Dgb24hChangeService {
     final message = '$provider: ${_reason(error)}';
     failures.add(message);
     LoggerWrapper.logWarn('Dgb24hChange', provider, message);
+    if (kDebugMode) debugPrint('[DGB24H] $message');
     if (error is _FeedError && error.cooldown != null) {
       if (provider == 'CoinPaprika') {
         _paprikaBlockedUntil = now.add(error.cooldown!);
@@ -221,6 +225,7 @@ class Dgb24hChangeService {
   Dgb24hSnapshot _previousOrUnavailable(DateTime now, List<String> failures) {
     final previous = _lastGood;
     final message = failures.isEmpty ? _lastResult?.error : failures.join('; ');
+    if (kDebugMode) debugPrint('[DGB24H] fallback source=${previous?.source} percent=${previous?.percent} error=$message');
     if (previous != null && previous.updatedAt != null) {
       final age = now.difference(previous.updatedAt!);
       if (!age.isNegative && age <= maxCachedAge) {
@@ -244,6 +249,7 @@ class Dgb24hChangeService {
   Future<Dgb24hSnapshot> _accept(Dgb24hSnapshot value) async {
     _lastGood = value;
     _lastResult = value;
+    if (kDebugMode) debugPrint('[DGB24H] accepted source=${value.source} percent=${value.percent} stale=${value.stale}');
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setDouble(_savedPercent, value.percent!);

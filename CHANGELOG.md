@@ -1,3 +1,9 @@
+### **0.1.7** (2026-11-15)
+- Improved when and how DigiByte Wallet asks iPhone users for App Store reviews.
+- Added Write a Review and Contact Support options in the wallet menu.
+- Made support emails shorter with device, OS, and app details added automatically.
+- Improved review tracking to avoid unnecessary repeat prompts.
+
 ### **0.1.6** (2026-11-14)
 - Wallets stay accessible when offline and reconnect when service returns.
 - Improved handling of pending transactions during connection problems.

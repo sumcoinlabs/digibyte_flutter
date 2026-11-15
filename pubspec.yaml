@@ -75,7 +75,7 @@ dependencies:
   flutter_app_badge_control: ^0.0.2
   geocoding: ^4.0.0
   geolocator: ^14.0.1
-  font_awesome_flutter: 10.9.1
+  font_awesome_flutter: 11.0.0
   google_fonts: ^6.2.1  # Updated to match latest
 
   in_app_review: ^2.0.9

@@ -218,7 +218,7 @@ class _Dgb24hChangeIndicatorState extends State<Dgb24hChangeIndicator>
                       value,
                       key: const Key('dgb24hChangeLabel'),
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: color,
                       ),

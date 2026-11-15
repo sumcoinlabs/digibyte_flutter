@@ -1,11 +1,15 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
+import '../../providers/app_settings_provider.dart';
+import '../../providers/wallet_provider.dart';
 import '../../tools/app_localizations.dart';
 import '../../tools/app_routes.dart';
 import '../../widgets/buttons.dart';
+import '../../widgets/setup/setup_contrast_switch_tile.dart';
 import 'setup_landing.dart';
 
 class SetupLegalScreen extends StatefulWidget {
@@ -83,6 +87,7 @@ class _SetupLegalScreenState extends State<SetupLegalScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     PeerButton(
+                      onPrimaryBackground: true,
                       action: () => _launchURL(
                         'https://github.com/sumcoinlabs/digibyte_flutter/blob/main/LICENSE',
                       ),
@@ -95,18 +100,11 @@ class _SetupLegalScreenState extends State<SetupLegalScreen> {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: SwitchListTile(
+                      child: SetupContrastSwitchTile(
                         key: const Key('setupLegalConsentKey'),
-                        title: Text(
-                          AppLocalizations.instance
-                              .translate('setup_legal_switch_tile'),
-                          style: const TextStyle(
-                            color: Colors.white,
-                          ),
-                        ),
+                        title: AppLocalizations.instance
+                            .translate('setup_legal_switch_tile'),
                         value: _termsAgreed,
-                        activeColor: Colors.white,
-                        inactiveThumbColor: Colors.grey,
                         onChanged: (newState) => toggleTermsHandler(newState),
                       ),
                     ),
@@ -125,7 +123,49 @@ class _SetupLegalScreenState extends State<SetupLegalScreen> {
                 action: () async {
                   final navigator = Navigator.of(context);
                   if (_termsAgreed == false) return;
-                  var prefs = await SharedPreferences.getInstance();
+                  final prefs = await SharedPreferences.getInstance();
+                  // New seed: ensure its FIRST DigiByte wallet exists before
+                  // marking setup complete. Imported seeds retain scanning.
+                  if (prefs.getBool('importedSeed') != true) {
+                    try {
+                      final walletProvider = context.read<WalletProvider>();
+                      await walletProvider.init();
+                      if (walletProvider.availableWalletValues.isEmpty) {
+                        await walletProvider.addWallet(
+                          name: 'digibyte_0',
+                          title: 'DigiByte',
+                          letterCode: 'DGB',
+                          isImportedSeed: false,
+                          watchOnly: false,
+                        );
+                        if (!mounted) return;
+                        final settings = context.read<AppSettingsProvider>();
+                        final order = List<String>.from(settings.walletOrder);
+                        if (!order.contains('digibyte_0')) {
+                          settings.setWalletOrder([...order, 'digibyte_0']);
+                        }
+                        if (settings.notificationInterval > 0) {
+                          final notifications = List<String>.from(
+                              settings.notificationActiveWallets);
+                          if (!notifications.contains('digibyte_0')) {
+                            settings.setNotificationActiveWallets(
+                              [...notifications, 'digibyte_0'],
+                            );
+                          }
+                        }
+                      }
+                    } catch (_) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(AppLocalizations.instance
+                              .translate('add_coin_failed')),
+                        ),
+                      );
+                      return;
+                    }
+                  }
+                  if (!mounted) return;
                   await prefs.setBool('setupFinished', true);
                   await navigator.pushNamedAndRemoveUntil(
                     Routes.walletList,

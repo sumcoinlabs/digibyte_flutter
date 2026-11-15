@@ -9,6 +9,7 @@ import '../../providers/encrypted_box_provider.dart';
 import '../../tools/app_localizations.dart';
 import '../../tools/app_routes.dart';
 import '../../widgets/buttons.dart';
+import '../../widgets/setup/setup_contrast_switch_tile.dart';
 import '../../widgets/setup/session_slider.dart';
 import 'setup_landing.dart';
 
@@ -104,16 +105,10 @@ class _SetupAuthScreenState extends State<SetupAuthScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 40),
                         child: kIsWeb
                             ? const SetupSessionSlider()
-                            : SwitchListTile(
-                                title: Text(
-                                  AppLocalizations.instance
-                                      .translate('app_settings_biometrics'),
-                                  key: const Key('setupAllowBiometrics'),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 17,
-                                  ),
-                                ),
+                            : SetupContrastSwitchTile(
+                                title: AppLocalizations.instance
+                                    .translate('app_settings_biometrics'),
+                                labelKey: const Key('setupAllowBiometrics'),
                                 value: _biometricsAllowed,
                                 onChanged: (newState) {
                                   if (_biometricsAvailable == false) {

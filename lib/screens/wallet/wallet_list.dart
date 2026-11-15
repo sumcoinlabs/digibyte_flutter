@@ -33,8 +33,8 @@ import '../../widgets/logout_dialog_dummy.dart'
     if (dart.library.html) '../../widgets/logout_dialog.dart';
 import '../../widgets/spinning_digibyte_icon.dart';
 import '../secure_storage_error_screen.dart';
-// 0.1.6: Add Wallet flow temporarily disabled.
-// import '../../widgets/wallet/new_wallet.dart';
+// Keep multi-wallet expansion disabled; restore first-wallet recovery.
+import '../../widgets/wallet/new_wallet.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 // Remove "const" if BannerAdWidget doesn't have a const constructor
@@ -257,7 +257,7 @@ class _WalletListScreenState extends State<WalletListScreen>
                             style: TextStyle(
                               letterSpacing: 1.4,
                               fontSize: 24,
-                              color: Theme.of(context).colorScheme.surface,
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
                         ),
@@ -286,49 +286,55 @@ class _WalletListScreenState extends State<WalletListScreen>
                                 child: SingleChildScrollView(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    if (_nOfHiddenWallets == 0)
-                                      Text(
-                                        AppLocalizations.instance.translate(
-                                          'wallets_none',
+                                    children: [
+                                      if (_nOfHiddenWallets == 0)
+                                        Text(
+                                          AppLocalizations.instance.translate(
+                                            'wallets_none',
+                                          ),
+                                          key: const Key('noActiveWallets'),
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontStyle: FontStyle.italic,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
+                                          ),
                                         ),
-                                        key: const Key('noActiveWallets'),
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontStyle: FontStyle.italic,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .surface,
+                                      if (_importedSeed)
+                                        const SizedBox(height: 20),
+                                      if (_importedSeed)
+                                        PeerButtonBorder(
+                                          key:
+                                              const Key('scanForWalletsButton'),
+                                          text: AppLocalizations.instance
+                                              .translate(
+                                            'scan_for_wallets',
+                                          ),
+                                          action: () =>
+                                              Navigator.of(context).pushNamed(
+                                            Routes.appSettingsWalletScanner,
+                                          ),
                                         ),
-                                      ),
-                                    if (_importedSeed)
-                                      const SizedBox(height: 20),
-                                    if (_importedSeed)
-                                      PeerButtonBorder(
-                                        key: const Key('scanForWalletsButton'),
-                                        text:
-                                            AppLocalizations.instance.translate(
-                                          'scan_for_wallets',
+                                      // Restore the first account only. Multi-wallet
+                                      // expansion remains disabled in this release.
+                                      if (_nOfHiddenWallets == 0)
+                                        const SizedBox(height: 20),
+                                      if (_nOfHiddenWallets == 0)
+                                        PeerButtonBorder(
+                                          key: const Key(
+                                              'createInitialWalletButton'),
+                                          text: AppLocalizations.instance
+                                              .translate(
+                                            'add_new_wallet',
+                                          ),
+                                          action: () =>
+                                              _showWalletDialog(context),
                                         ),
-                                        action: () =>
-                                            Navigator.of(context).pushNamed(
-                                          Routes.appSettingsWalletScanner,
-                                        ),
-                                      ),
-                                    // 0.1.6: Preserve disabled Add Wallet CTA and its spacing.
-                                    /*
-                                    const SizedBox(height: 20),
-                                    PeerButtonBorder(
-                                      text: AppLocalizations.instance.translate(
-                                        'add_new_wallet',
-                                      ),
-                                      action: () => _showWalletDialog(context),
-                                    ),
-                                    */
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            )
+                              )
                             : Expanded(
                                 child: SizedBox(
                                   width: MediaQuery.of(context).size.width >
@@ -763,8 +769,7 @@ class _WalletListScreenState extends State<WalletListScreen>
         : values.where((wallet) => !wallet.hidden).toList();
   }
 
-  // 0.1.6: Keep dormant dialog implementation for future multi-wallet support.
-  /*
+  // Only exposed as a recovery path when there are no wallet accounts.
   void _showWalletDialog(BuildContext context) {
     if (_initial == false) {
       showDialog(
@@ -775,7 +780,6 @@ class _WalletListScreenState extends State<WalletListScreen>
       );
     }
   }
-  */
 
   void _toggleHiddenWallets() {
     setState(() {

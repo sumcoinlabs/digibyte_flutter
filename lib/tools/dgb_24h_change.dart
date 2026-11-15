@@ -109,6 +109,15 @@ class Dgb24hChangeService {
       binanceInterval,
       force: force,
     );
+    LoggerWrapper.logInfo(
+      'DGB24H',
+      'poll',
+      'check=$now BinanceDue=$dueBinance '
+          'CoinPaprikaDue=$duePaprika '
+          'lastBinance=$_lastBinanceAttempt '
+          'BinanceBlockedUntil=$_binanceBlockedUntil',
+    );
+
     // A successful Binance result remains current until its next poll.
     // Do not contact the backup simply because its timer is due.
     if (!dueBinance &&

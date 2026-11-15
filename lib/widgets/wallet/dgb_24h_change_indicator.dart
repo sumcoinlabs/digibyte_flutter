@@ -20,6 +20,7 @@ class _Dgb24hChangeIndicatorState extends State<Dgb24hChangeIndicator>
   Dgb24hSnapshot? _snapshot;
   Timer? _timer;
   bool _loading = true;
+  bool _foreground = true;
 
   Dgb24hChangeService get _service =>
       widget.service ?? Dgb24hChangeService.shared;
@@ -28,24 +29,28 @@ class _Dgb24hChangeIndicatorState extends State<Dgb24hChangeIndicator>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _startPolling();
     _loadInitial();
   }
 
-  void _startPolling() {
+  // Schedule from completion, not from an independent periodic clock.
+  // This prevents a tick just before the 60-second API interval expires.
+  void _scheduleNextPoll() {
     _timer?.cancel();
-    _timer = Timer.periodic(
+    if (!mounted || !_foreground) return;
+    _timer = Timer(
       Dgb24hChangeService.refreshInterval,
-      (_) => _update(),
+      () => _update(),
     );
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _startPolling();
+      _foreground = true;
+      _timer?.cancel();
       _update();
     } else {
+      _foreground = false;
       _timer?.cancel();
       _timer = null;
     }
@@ -63,7 +68,8 @@ class _Dgb24hChangeIndicatorState extends State<Dgb24hChangeIndicator>
   }
 
   Future<void> _update() async {
-    if (!mounted) return;
+    if (!mounted || !_foreground) return;
+    _timer?.cancel();
 
     setState(() => _loading = true);
 
@@ -87,6 +93,8 @@ class _Dgb24hChangeIndicatorState extends State<Dgb24hChangeIndicator>
           error: 'Market data could not be reached.',
         );
       });
+    } finally {
+      _scheduleNextPoll();
     }
   }
 

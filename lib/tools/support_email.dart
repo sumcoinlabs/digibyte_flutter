@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -7,53 +11,63 @@ import 'package:url_launcher/url_launcher.dart';
 class WalletSupportEmail {
   static const address = 'digibytewalletorg@gmail.com';
 
-  static String bodyForVersion(String version) =>
-      '''Hello DigiByte Wallet Support,
+  /// Pure formatter so the support message is easy to unit-test.
+  /// No unique device identifiers, wallet keys, addresses or balances.
+  static String bodyForDetails({
+    required String appVersion,
+    required String device,
+    required String operatingSystem,
+  }) =>
+      '''Hi DigiByte Wallet Support,
 
-WHAT HAPPENED?
-Please describe the problem or your question:
+I need help with:
+[Briefly tell us what happened or what you need help with.]
 
-WHAT DID YOU EXPECT TO HAPPEN?
+What were you doing at the time?
+[Optional: the screen or action you were using.]
 
-HOW CAN WE REPRODUCE IT?
-List the steps you took, starting just before the problem:
-1.
-2.
-3.
+Did you see an error?
+[Paste the message here, or say No.]
 
-DOES THIS HAPPEN EVERY TIME?
-Always / Sometimes / Only once:
+A screenshot or short recording may help (optional).
 
-ERROR MESSAGES
-Copy the exact message or write None:
+--- Device details (added automatically) ---
+App: DigiByte Wallet $appVersion
+Device: $device
+Software: $operatingSystem
 
-DEVICE DETAILS
-Device model (e.g. iPhone 14 or Galaxy S24):
-OS version (e.g. iOS 18 or Android 16):
-DigiByte Wallet version: $version
-
-ATTACHMENTS
-Please add screenshots or a short screen recording if helpful.
-
-WHAT HAVE YOU ALREADY TRIED? (optional)
-
-SECURITY: Never email your recovery words, private keys, WIF, passwords,
-or images that reveal them. Hide personal information before attaching images.
-
-Thank you for helping improve DigiByte Wallet.
+Please never share your recovery phrase, private keys or passwords.
+Thanks!
 ''';
 
   static Future<void> compose(BuildContext context) async {
-    String version = 'Unknown';
+    String version = 'Unavailable';
+    String device = 'Unavailable';
+    String operatingSystem = 'Unavailable';
     try {
       final info = await PackageInfo.fromPlatform();
       version = '${info.version} (build ${info.buildNumber})';
     } catch (_) {}
+
+    // Device model and OS version are non-unique diagnostics. No device IDs.
+    try {
+      if (!kIsWeb && Platform.isIOS) {
+        final info = await DeviceInfoPlugin().iosInfo;
+        device = info.modelName.isNotEmpty ? info.modelName : info.model;
+        operatingSystem = '${info.systemName} ${info.systemVersion}';
+      } else if (!kIsWeb && Platform.isAndroid) {
+        final info = await DeviceInfoPlugin().androidInfo;
+        device = '${info.manufacturer} ${info.model}'.trim();
+        operatingSystem = 'Android ${info.version.release}';
+      }
+    } catch (_) {
+      if (!kIsWeb) operatingSystem = Platform.operatingSystemVersion;
+    }
     if (!context.mounted) return;
 
     final mailUri = Uri.parse(
       'mailto:$address?subject=${Uri.encodeComponent('DigiByte Wallet support request')}'
-      '&body=${Uri.encodeComponent(bodyForVersion(version))}',
+      '&body=${Uri.encodeComponent(bodyForDetails(appVersion: version, device: device, operatingSystem: operatingSystem))}',
     );
     try {
       if (await launchUrl(mailUri)) return;

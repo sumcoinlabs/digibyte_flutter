@@ -27,6 +27,7 @@ import '../../tools/app_routes.dart';
 import '../../tools/auth.dart';
 import '../../tools/logger_wrapper.dart';
 import '../../tools/in_app_review.dart';
+import '../../tools/support_email.dart';
 import '../../tools/price_ticker.dart';
 import '../../widgets/loading_indicator.dart';
 import '../../widgets/wallet/addresses_tab.dart';
@@ -544,8 +545,40 @@ class _WalletHomeState extends State<WalletHomeScreen>
     );
   }
 
+  Future<void> _openReviewFromWalletMenu() async {
+    final opened = await InAppReviewService.instance.openAppStoreReview();
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to open the App Store right now.')),
+      );
+    }
+  }
+
+  Future<void> _testNativeReviewPrompt() async {
+    if (!kDebugMode || kIsWeb || !Platform.isIOS) return;
+    // Let PopupMenuButton close before asking StoreKit to present anything.
+    await Future<void>.delayed(const Duration(milliseconds: 550));
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+    final requested = await InAppReviewService.instance.requestDebugReview();
+    if (!requested && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Native review prompt unavailable on this device.')),
+      );
+    }
+    // A successful API request does NOT guarantee Apple showed the dialog.
+  }
+
   void _selectPopUpMenuItem(String value) {
     switch (value) {
+      case 'write_review':
+        unawaited(_openReviewFromWalletMenu());
+        break;
+      case 'contact_support':
+        unawaited(WalletSupportEmail.compose(context));
+        break;
+      case 'test_review_prompt':
+        unawaited(_testNativeReviewPrompt());
+        break;
       case 'import_wallet':
         Navigator.of(context).pushNamed(
           Routes.importPaperWallet,
@@ -760,7 +793,7 @@ class _WalletHomeState extends State<WalletHomeScreen>
       PopupMenuButton(
         onSelected: (dynamic value) => _selectPopUpMenuItem(value),
         itemBuilder: (_) {
-          return [
+          return <PopupMenuEntry<String>>[
             if (_appSettings.camerasAvailble)
               PopupMenuItem(
                 value: 'import_wallet',
@@ -857,6 +890,36 @@ class _WalletHomeState extends State<WalletHomeScreen>
                 ),
               ),
             ),
+            const PopupMenuDivider(),
+            if (!kIsWeb && Platform.isIOS)
+              PopupMenuItem(
+                key: const Key('walletWriteReviewMenuItem'),
+                value: 'write_review',
+                child: ListTile(
+                  leading: Icon(Icons.star_outline,
+                      color: Theme.of(context).colorScheme.secondary),
+                  title: const Text('Write a Review'),
+                ),
+              ),
+            PopupMenuItem(
+              key: const Key('walletContactSupportMenuItem'),
+              value: 'contact_support',
+              child: ListTile(
+                leading: Icon(Icons.mail_outline,
+                    color: Theme.of(context).colorScheme.secondary),
+                title: const Text('Contact Support'),
+              ),
+            ),
+            if (kDebugMode && !kIsWeb && Platform.isIOS)
+              PopupMenuItem(
+                key: const Key('walletDebugReviewMenuItem'),
+                value: 'test_review_prompt',
+                child: ListTile(
+                  leading: Icon(Icons.bug_report_outlined,
+                      color: Theme.of(context).colorScheme.secondary),
+                  title: const Text('Test Review Prompt (Debug)'),
+                ),
+              ),
           ];
         },
       ),

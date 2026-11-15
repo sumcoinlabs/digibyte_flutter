@@ -136,6 +136,21 @@ class InAppReviewService {
     }
   }
 
+  /// Development-only preview of Apple's native review prompt on a real iPhone.
+  /// This bypasses our policy, never records an attempt, and can be suppressed by iOS.
+  /// It is impossible to know whether StoreKit actually displayed the dialog.
+  Future<bool> requestDebugReview() async {
+    if (!kDebugMode || kIsWeb || !Platform.isIOS) return false;
+    try {
+      final reviewer = InAppReview.instance;
+      if (!await reviewer.isAvailable()) return false;
+      await reviewer.requestReview();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Persistent user-initiated review link, separate from native prompt quota.
   Future<bool> openAppStoreReview() async {
     if (kIsWeb || !Platform.isIOS) return false;
